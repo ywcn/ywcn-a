@@ -4,6 +4,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Panda Login Form | Coding Vibess</title>
+    <link rel="icon" href="./img/恐龙.png">
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
     <!-- Stylesheet -->
@@ -497,11 +498,12 @@
         console.error("Login failed:", err);
         errorDiv.textContent = "登录失败，请检查网络或稍后再试";
     } 
-} 
         if (!username || !password) {
     errorDiv.textContent = "用户名和密码不能为空";
     return;
 }
+} 
+        
 // 使用 Web Crypto API 进行前端哈希
 const encoder = new TextEncoder();
 const passwordBuffer = encoder.encode(password + 'salt');
