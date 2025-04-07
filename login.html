@@ -465,7 +465,7 @@
         }
 
     const supabaseUrl = 'https://mdgczfpcturvgtxjzrfc.supabase.co';
-    const supabaseKey = 'process.env.SUPABASE_KEY'; 
+    const const supabaseKey = process.env.SUPABASE_KEY; 
 
     async function login() {
         const username = document.getElementById('username').value.trim();
