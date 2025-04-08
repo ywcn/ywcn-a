@@ -130,10 +130,7 @@
         const username = usernameRef.value.trim();
         const password = passwordRef.value.trim();
 
-        if (!username || !password) {
-            errorDiv.textContent = "用户名和密码不能为空";
-            return;
-        }
+        
 
         btn.disabled = true;
         btn.textContent = '登录中...';
