@@ -334,8 +334,8 @@
 
 <body>
     <!-- 音效元素 -->
-    <audio id="avatarSound" src="./voice/董昱昆 - 微博提示音.ogg"></audio>
-    <audio id="warningSound" src="./voice/阿茶暖暖 - 警报声-游戏提示音.ogg"></audio>
+    <audio id="avatarSound" src="./voice/董昱昆 - 微博提示音.ogg" preload="auto"></audio>
+    <audio id="warningSound" src="./voice/阿茶暖暖 - 警报声-游戏提示音.ogg" preload="auto"></audio>
     <!-- 登录用户信息 + 按钮 -->
     <div class="user-bar">
         <div class="user-info">
@@ -911,22 +911,31 @@
         }
         //换头像
         function changeAvatar() {
-            const user = JSON.parse(localStorage.getItem("loggedInUser"));
-            const allUsers = JSON.parse(localStorage.getItem("allUsers"));
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    const allUsers = JSON.parse(localStorage.getItem("allUsers"));
 
-            // 生成新的随机头像链接
-            const randomSeed = Date.now() + Math.random();
-            const newUrl = `https://i.pravatar.cc/150?u=${randomSeed}`;
+    // 生成新的随机头像链接
+    const randomSeed = Date.now() + Math.random();
+    const newUrl = `https://i.pravatar.cc/150?u=${randomSeed}`;
 
-            // 更新头像地址
-            user.avatar = newUrl;
-            allUsers[user.username].avatar = newUrl;
+    // 更新头像地址
+    user.avatar = newUrl;
+    allUsers[user.username].avatar = newUrl;
 
-            // 保存并更新页面
-            localStorage.setItem("loggedInUser", JSON.stringify(user));
-            localStorage.setItem("allUsers", JSON.stringify(allUsers));
-            document.getElementById("userAvatar").src = newUrl;
-        }
+    // 保存并更新页面
+    localStorage.setItem("loggedInUser", JSON.stringify(user));
+    localStorage.setItem("allUsers", JSON.stringify(allUsers));
+    document.getElementById("userAvatar").src = newUrl;
+
+    // 播放音效
+    const avatarSound = document.getElementById('avatarSound');
+    if (avatarSound) {
+        avatarSound.currentTime = 0;
+        avatarSound.play().catch(err => {
+            console.warn("音效播放失败（可能被拦截）:", err);
+        });
+    }
+}
 
         //退出
         function logout() {
