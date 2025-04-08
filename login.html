@@ -100,27 +100,33 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc';
 
         async function login() {
-            const username = usernameRef.value.trim();
-            const password = passwordRef.value.trim();
+    const username = usernameRef.value.trim();
+    const password = passwordRef.value.trim();
 
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: `${username}@example.com`, // 或用username字段
-                password: password
-            });
+    if (!username || !password) {
+        errorDiv.textContent = "用户名和密码不能为空";
+        return;
+    }
 
-            if (error) {
-                errorDiv.textContent = error.message;
-                return;
-            }
+    const { data, error } = await supabase.auth.signInWithPassword({
+       username: `${username}@example.com`, // 或用username字段
+        password: password
+    });
 
-            localStorage.setItem("loggedInUser", JSON.stringify({
-                id: data.user.id,
-                name: data.user.user_metadata.name,
-                avatar: data.user.user_metadata.avatar
-            }));
+    if (error) {
+        errorDiv.textContent = error.message;
+        return;
+    }
 
-            window.location.href = "index.html";
-        }
+    localStorage.setItem("loggedInUser", JSON.stringify({
+        id: data.user.id,
+        name: data.user.user_metadata.name,
+        avatar: data.user.user_metadata.avatar
+    }));
+
+    window.location.href = "index.html";
+}
+
         const username = usernameRef.value.trim();
         const password = passwordRef.value.trim();
 
