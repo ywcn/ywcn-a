@@ -100,59 +100,51 @@
     const supabaseKey = 'your-supabase-api-key';
 
     async function login() {
-        const username = usernameRef.value.trim();
-        const password = passwordRef.value.trim();
+    const username = usernameRef.value.trim();
+    const password = passwordRef.value.trim();
 
-        if (!username || !password) {
-            errorDiv.textContent = "用户名和密码不能为空";
-            return;
-        }
-
-        btn.disabled = true;
-        btn.textContent = '登录中...';
-
-        try {
-            const res = await fetch(`${supabaseUrl}/rest/v1/users?username=eq.${username}`, {
-                headers: {
-                    apikey: supabaseKey,
-                    Authorization: `Bearer ${supabaseKey}`
-                }
-            });
-
-            const data = await res.json();
-
-            if (data.length !== 1) {
-                errorDiv.textContent = "用户名不存在";
-            } else {
-                const user = data[0];
-
-                // 使用 hash 加密后对比密码
-                const encoder = new TextEncoder();
-                const passwordBuffer = encoder.encode(password + 'salt'); // 你也可以把 salt 改成后端给的
-                const hashBuffer = await crypto.subtle.digest('SHA-256', passwordBuffer);
-                const hashedPassword = Array.from(new Uint8Array(hashBuffer))
-                    .map(b => b.toString(16).padStart(2, '0')).join('');
-
-                if (user.password === hashedPassword) {
-                    localStorage.setItem("loggedInUser", JSON.stringify({
-                        username,
-                        name: user.name,
-                        avatar: user.avatar
-                    }));
-                    window.location.href = "index.html";
-                } else {
-                    errorDiv.textContent = "密码错误";
-                }
-            }
-
-        } catch (err) {
-            console.error("Login failed:", err);
-            errorDiv.textContent = "登录失败，请检查网络或稍后再试";
-        }
-
-        btn.disabled = false;
-        btn.textContent = '登录';
+    if (!username || !password) {
+        errorDiv.textContent = "用户名和密码不能为空";
+        return;
     }
+
+    btn.disabled = true;
+    btn.textContent = '登录中...';
+
+    try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/users?username=eq.${username}`, {
+            headers: {
+                apikey: supabaseKey,
+                Authorization: `Bearer ${supabaseKey}`
+            }
+        });
+
+        const data = await res.json();
+
+        if (data.length !== 1) {
+            errorDiv.textContent = "用户名不存在";
+        } else if (data[0].pwd !== password) {
+            errorDiv.textContent = "密码错误";
+        } else {
+            // 登录成功，保存信息并跳转
+            const user = data[0];
+            localStorage.setItem("loggedInUser", JSON.stringify({
+                username: user.username,
+                name: user.name,
+                avatar: user.avatar
+            }));
+            window.location.href = "index.html";
+        }
+
+    } catch (err) {
+        console.error("登录出错:", err);
+        errorDiv.textContent = "网络错误，请稍后再试";
+    }
+
+    btn.disabled = false;
+    btn.textContent = '登录';
+}
+
 
     // 提交表单绑定 login()
     document.querySelector("form").addEventListener("submit", e => {
