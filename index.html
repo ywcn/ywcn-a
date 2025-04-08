@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>客户信息登记</title>
     <link rel="icon" href="./img/恐龙.png">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -488,9 +489,49 @@
         </div>
     </div>
     <script>
+        const supabase = supabase.createClient(
+      'https://mdgczfpcturvgtxjzrfc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'
+    );
+    // 初始化音效：首次点击触发音频权限
+    document.addEventListener('click', () => {
+      const sound = document.getElementById('deleteSound');
+      sound.muted = true;
+      sound.play().then(() => {
+        sound.pause();
+        sound.muted = false;
+      });
+    }, { once: true });
+        async function loadData() {
+      const { data, error } = await supabase.from('customers').select('*').order('id');
+      if (error) return alert('加载失败：' + error.message);
+         async function del(id) {
+      const { error } = await supabase.from('customers').delete().eq('id', id);
+      if (!error) {
+        document.getElementById('deleteSound').play();
+        loadData();
+      } else {
+        alert('删除失败：' + error.message);
+      }
+    }
 
+    document.getElementById('form').onsubmit = async e => {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const phone = document.getElementById('phone').value;
+      const address = document.getElementById('address').value;
+      const { error } = await supabase.from('customers').insert({ name, phone, address });
+      if (!error) {
+        e.target.reset();
+        loadData();
+      } else {
+        alert('添加失败：' + error.message);
+      }
+    };
 
-
+    checkLogin();
+    loadData();
+            
         let customers = [];
         // 当前编辑的客户索引（null表示新增）
         let currentEditIndex = null;
