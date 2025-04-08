@@ -13,7 +13,7 @@
 
 <body>
     <div class="container">
-        <form onsubmit="login(); return false;">
+        <form >
             <label for="username">Username</label>
             <input type="text" id="username" placeholder="Enter username" /><br />
             <label for="password">Password</label>
@@ -97,7 +97,7 @@
     }
 
     const supabaseUrl = 'https://mdgczfpcturvgtxjzrfc.supabase.co';
-    const supabaseKey = 'your-supabase-api-key';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc';
 
     async function login() {
     const username = usernameRef.value.trim();
