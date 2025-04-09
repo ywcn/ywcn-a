@@ -107,7 +107,7 @@
   const avatarUrl = `https://i.pravatar.cc/150?u=${username}`;
 
   const { error } = await supabaseClient.from("users").insert([
-    { username, pwd: password, name, avatar: avatarUrl }
+    { username, password: password, name, avatar: avatarUrl }
   ]);
 
   if (error) {
