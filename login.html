@@ -46,7 +46,6 @@
 
 
     <!-- Script -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script type="module">
 
         const usernameRef = document.getElementById("username");
@@ -87,12 +86,7 @@
                 normalHandStyle();
             }
         });
-         // 初始化 Supabase 客户端
-          const { createClient } = supabase;
-          const supabaseClient = createClient(
-          'https://mdgczfpcturvgtxjzrfc.supabase.co',
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'
-         );
+
         // 默认用户初始化
         if (!localStorage.getItem("allUsers")) {
             const defaultUsers = {
@@ -106,44 +100,60 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc';
 
         async function login() {
-    const username = usernameRef.value.trim();
-    const password = passwordRef.value.trim();
+            const username = usernameRef.value.trim();
+            const password = passwordRef.value.trim();
 
-    if (!username || !password) {
-      errorDiv.textContent = "用户名和密码不能为空";
-      return;
-    }
+            if (!username || !password) {
+                errorDiv.textContent = "用户名和密码不能为空";
+                return;
+            }
 
-    btn.disabled = true;
-    btn.textContent = '登录中...';
+            btn.disabled = true;
+            btn.textContent = '登录中...';
 
-    try {
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email: `${username}@example.com`, // 确保与注册邮箱一致
-        password: password
-      });
+            try {
+                const res = await fetch(`${supabaseUrl}/rest/v1/users?username=eq.${username}`, {
+                    headers: {
+                        apikey: supabaseKey,
+                        Authorization: `Bearer ${supabaseKey}`
+                    }
+                });
 
-      if (error) throw error;
+                const data = await res.json();
 
-      localStorage.setItem("loggedInUser", JSON.stringify({
-        id: data.user.id,
-        name: data.user.user_metadata.name || username,
-        avatar: data.user.user_metadata.avatar || "https://i.pravatar.cc/40"
-      }));
+                if (data.length !== 1) {
+                    errorDiv.textContent = "用户名不存在";
+                } else if (data[0].pwd !== password) {
+                    errorDiv.textContent = "密码错误";
+                } else {
+                    const user = data[0];
+                    localStorage.setItem("loggedInUser", JSON.stringify({
+                        username: user.username,
+                        name: user.name,
+                        avatar: user.avatar
+                    }));
+                    window.location.href = "index.html";
+                }
 
-      window.location.href = "index.html";
-    } catch (error) {
-      errorDiv.textContent = error.message;
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '登录';
-    }
-  }
+            } catch (err) {
+                console.error("登录出错:", err);
+                errorDiv.textContent = "网络错误，请稍后再试";
+            }
 
-  document.querySelector("form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    login();
-  });
+            btn.disabled = false;
+            btn.textContent = '登录';
+        }
+
+        document.querySelector("form").addEventListener("submit", e => {
+            e.preventDefault();
+            login();
+        });
+
+
+
+
+
+
 
     </script>
 </body>
