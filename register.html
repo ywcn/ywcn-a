@@ -74,44 +74,51 @@
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...（略）'
         );
 
-        async function register() {
-            const username = document.getElementById("username").value.trim();
-            const password = document.getElementById("password").value.trim();
-            const name = document.getElementById("name").value.trim();
-            const msg = document.getElementById("msg");
+       async function register() {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const msg = document.getElementById("msg");
 
-            if (!username || !password || !name) {
-                msg.textContent = "请填写完整信息！";
-                msg.style.color = "red";
-                return;
-            }
+  if (!username || !password || !name) {
+    msg.textContent = "请填写完整信息！";
+    msg.style.color = "red";
+    return;
+  }
 
-            // 检查用户名是否已存在
-            const { data: existingUsers } = await supabaseClient
-                .from("users")
-                .select("username")
-                .eq("username", username);
+  // 检查用户名是否已存在
+  const { data: existingUsers, error: checkError } = await supabaseClient
+    .from("users")
+    .select("username")
+    .eq("username", username);
 
-            if (existingUsers.length > 0) {
-                msg.textContent = "用户名已存在，请换一个！";
-                msg.style.color = "red";
-                return;
-            }
+  if (checkError) {
+    msg.textContent = "检查用户名失败：" + checkError.message;
+    msg.style.color = "red";
+    return;
+  }
 
-            const avatarUrl = `https://i.pravatar.cc/150?u=${username}`;
+  if (existingUsers && existingUsers.length > 0) {
+    msg.textContent = "用户名已存在，请换一个！";
+    msg.style.color = "red";
+    return;
+  }
 
-            const { error } = await supabaseClient.from("users").insert([
-                { username, pwd: password, name, avatar: avatarUrl }
-            ]);
+  const avatarUrl = `https://i.pravatar.cc/150?u=${username}`;
 
-            if (error) {
-                msg.textContent = "注册失败：" + error.message;
-                msg.style.color = "red";
-            } else {
-                msg.textContent = `注册成功！可以使用 ${username} 登录`;
-                msg.style.color = "green";
-            }
-        }
+  const { error } = await supabaseClient.from("users").insert([
+    { username, pwd: password, name, avatar: avatarUrl }
+  ]);
+
+  if (error) {
+    msg.textContent = "注册失败：" + error.message;
+    msg.style.color = "red";
+  } else {
+    msg.textContent = `注册成功！可以使用 ${username} 登录`;
+    msg.style.color = "green";
+  }
+}
+
     </script>
 </body>
 
