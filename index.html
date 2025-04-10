@@ -486,6 +486,12 @@
         if (!window.supabase) {
             console.error('Supabase SDK未正确加载');
         }
+        localStorage.setItem("loggedInUser", JSON.stringify({
+    id: user.id,
+    name: user.user_metadata.name || "未知用户",  // 确保存储 `name`
+    avatar: user.user_metadata.avatar_url || "default-avatar.png"  // 确保存储头像
+}));
+
         const { createClient } = supabase;
         const supabaseClient = createClient(
             'https://mdgczfpcturvgtxjzrfc.supabase.co',
@@ -952,11 +958,7 @@
             document.getElementById("userAvatar").src = user.avatar;
             document.getElementById("userName").textContent = `欢迎您！${user.name}`;
         }
-        localStorage.setItem("loggedInUser", JSON.stringify({
-  id: user.id,
-  name: user.user_metadata.name,
-  avatar: user.user_metadata.avatar_url // 存储头像URL
-}));
+        
 
         //换头像
         function changeAvatar() {
