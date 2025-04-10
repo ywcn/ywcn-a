@@ -996,14 +996,14 @@ if (!window.supabase) {
         // 获取当前用户信息
 const user = JSON.parse(localStorage.getItem("loggedInUser"));
 
-// 检查用户是否登录
 if (!user) {
-    window.location.href = "login.html";  // 未登录跳转到登录页
+    console.error("用户未登录");
+    window.location.href = "login.html";  // 如果未登录，则跳转到登录页面
 } else {
-    // 显示用户头像和用户名
     document.getElementById("userAvatar").src = user.avatar || "default-avatar.png";
     document.getElementById("userName").textContent = `欢迎您！${user.name || "未知用户"}`;
 }
+
 
 // 换头像函数
 function changeAvatar() {
