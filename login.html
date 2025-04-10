@@ -133,6 +133,10 @@
                 name: user.name || "未知用户",  // 存储用户名字
                 avatar: user.avatar || "https://i.pravatar.cc/40?u=default-avatar"  // 存储头像
             }));
+            // 登录成功后跳转到主页面
+setTimeout(() => {
+    window.location.href = "index.html";
+}, 100); // 延迟 100ms
 
             // 登录成功后跳转到主页面
             window.location.href = "index.html";
