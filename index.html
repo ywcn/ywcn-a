@@ -534,15 +534,19 @@
         }
 
         async function saveCustomer(customer) {
+    const {
+        data: { user },
+    } = await supabaseClient.auth.getUser();
+
+    customer.user_id = user.id; // ✨ 关键：绑定当前用户
+
     if (customer.id) {
-        // 更新现有客户
         const { error } = await supabaseClient
             .from('customers')
             .update(customer)
             .eq('id', customer.id);
         return { error };
     } else {
-        // 对 customer 对象字段做清洗，避免 {} 或 undefined 传入 Supabase
         const safeCustomer = {};
         for (const key in customer) {
             const val = customer[key];
