@@ -483,9 +483,33 @@
     </div>
     <script>
         let currentEditId = null;
-        if (!window.supabase) {
-            console.error('Supabase SDK未正确加载');
+        // 确保 Supabase SDK 加载成功
+if (!window.supabase) {
+    console.error('Supabase SDK未正确加载');
+}
+
+// 假设你从 Supabase 获取了 user 数据
+async function getUserData() {
+    try {
+        const { user, error } = await supabase.auth.getUser();
+        if (error) throw error;
+
+        if (user) {
+            // 确保用户数据正确
+            localStorage.setItem("loggedInUser", JSON.stringify({
+                id: user.id,
+                name: user.user_metadata.name || "未知用户",  // 如果没有名字，显示“未知用户”
+                avatar: user.user_metadata.avatar_url || "default-avatar.png"  // 如果没有头像，使用默认头像
+            }));
         }
+    } catch (err) {
+        console.error("获取用户数据时发生错误:", err);
+    }
+}
+
+// 调用获取用户数据的函数
+getUserData();
+
         localStorage.setItem("loggedInUser", JSON.stringify({
             id: user.id,
             name: user.user_metadata.name || "未知用户",  // 确保存储 `name`
