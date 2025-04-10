@@ -95,42 +95,54 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc';
 
         async function login() {
-            const username = usernameRef.value.trim();
-            const password = passwordRef.value.trim();
+    const username = usernameRef.value.trim();
+    const password = passwordRef.value.trim();
 
-            if (!username || !password) {
-                errorDiv.textContent = "用户名和密码不能为空";
-                return;
+    if (!username || !password) {
+        errorDiv.textContent = "用户名和密码不能为空";
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '登录中...';
+    
+    try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/users?username=eq.${username}`, {
+            headers: {
+                apikey: supabaseKey,
+                Authorization: `Bearer ${supabaseKey}`
             }
+        });
 
-            btn.disabled = true;
-            btn.textContent = '登录中...';
+        const data = await res.json();
 
-            // 从本地存储获取用户数据
-            const allUsers = JSON.parse(localStorage.getItem('allUsers'));
-            const user = allUsers[username];
+        if (data.length !== 1) {
+            errorDiv.textContent = "用户名不存在";
+        } else if (data[0].pwd !== password) {
+            errorDiv.textContent = "密码错误";
+        } else {
+            const user = data[0];
 
-            if (!user) {
-                errorDiv.textContent = "用户名不存在";
-            } else if (user.password !== password) {
-                errorDiv.textContent = "密码错误";
-            } else {
-                localStorage.setItem("loggedInUser", JSON.stringify({
-                    username: user.username,
-                    name: user.name,
-                    avatar: user.avatar
-                }));
-                window.location.href = "index.html";
-            }
+            // 将用户信息存储到 localStorage
+            localStorage.setItem("loggedInUser", JSON.stringify({
+                username: user.username,
+                name: user.name,
+                avatar: user.avatar || "default-avatar.png"
+            }));
 
-            btn.disabled = false;
-            btn.textContent = '登录';
+            // 登录成功后跳转到主页面
+            window.location.href = "index.html";
         }
 
-        document.querySelector("form").addEventListener("submit", e => {
-            e.preventDefault();
-            login();
-        });
+    } catch (err) {
+        console.error("登录出错:", err);
+        errorDiv.textContent = "网络错误，请稍后再试";
+    }
+
+    btn.disabled = false;
+    btn.textContent = '登录';
+}
+console.log(localStorage.getItem("loggedInUser"))
     </script>
 </body>
 
