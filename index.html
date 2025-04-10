@@ -534,30 +534,34 @@
         }
 
         async function saveCustomer(customer) {
-            if (customer.id) {
-                // 更新现有客户
-                const { error } = await supabaseClient
-                    .from('customers')
-                    .update(customer)
-                    .eq('id', customer.id);
-                return { error };
-            } else {
-             // 对 customer 对象字段做清洗，避免 {} 或 undefined 传入 Supabase
-             const safeCustomer = {};
-            for (const key in customer) {
+    if (customer.id) {
+        // 更新现有客户
+        const { error } = await supabaseClient
+            .from('customers')
+            .update(customer)
+            .eq('id', customer.id);
+        return { error };
+    } else {
+        // 对 customer 对象字段做清洗，避免 {} 或 undefined 传入 Supabase
+        const safeCustomer = {};
+        for (const key in customer) {
             const val = customer[key];
-           if (val === undefined || (typeof val === 'object' && Object.keys(val).length === 0)) {
-            safeCustomer[key] = null;
-        } else {
-            safeCustomer[key] = val;
+            if (
+                val === undefined ||
+                (typeof val === 'object' && val !== null && Object.keys(val).length === 0)
+            ) {
+                safeCustomer[key] = null;
+            } else {
+                safeCustomer[key] = val;
+            }
         }
-    }
 
-    const { data, error } = await supabaseClient
-        .from('customers')
-        .insert([safeCustomer])
-        .select();
-    return { data: data?.[0], error };
+        const { data, error } = await supabaseClient
+            .from('customers')
+            .insert([safeCustomer])
+            .select();
+        return { data: data?.[0], error };
+    }
 }
 
 
