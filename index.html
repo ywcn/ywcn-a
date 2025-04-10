@@ -482,6 +482,18 @@
         </div>
     </div>
     <script>
+        console.log("尝试读取 localStorage.loggedInUser：", localStorage.getItem("loggedInUser"));
+
+const user = JSON.parse(localStorage.getItem("loggedInUser"));
+if (!user) {
+    console.warn("未获取到用户，跳转回 login.html");
+    window.location.href = "login.html";
+} else {
+    console.log("获取到用户：", user);
+    document.getElementById("userAvatar").src = user.avatar || "default-avatar.png";
+    document.getElementById("userName").textContent = `欢迎您！${user.name || "未知用户"}`;
+}
+
         let currentEditId = null;
          // 确保 Supabase SDK 正确加载并初始化
 if (!window.supabase) {
@@ -993,16 +1005,7 @@ if (!window.supabase) {
                 alert('未能识别到有效的客户信息，请检查粘贴内容！');
             }
         });
-        // 获取当前用户信息
-const user = JSON.parse(localStorage.getItem("loggedInUser"));
-
-if (!user) {
-    console.error("用户未登录");
-    window.location.href = "login.html";  // 如果未登录，则跳转到登录页面
-} else {
-    document.getElementById("userAvatar").src = user.avatar || "default-avatar.png";
-    document.getElementById("userName").textContent = `欢迎您！${user.name || "未知用户"}`;
-}
+      
 
 
 // 换头像函数
