@@ -105,7 +105,7 @@
 
     btn.disabled = true;
     btn.textContent = '登录中...';
-    
+
     try {
         const res = await fetch(`${supabaseUrl}/rest/v1/users?username=eq.${username}`, {
             headers: {
@@ -123,11 +123,12 @@
         } else {
             const user = data[0];
 
-            // 将用户信息存储到 localStorage
+            // 将用户的完整信息存储到 localStorage
             localStorage.setItem("loggedInUser", JSON.stringify({
-                username: user.username,
-                name: user.name,
-                avatar: user.avatar || "default-avatar.png"
+                id: user.id,  // 存储用户 ID
+                username: user.username,  // 存储用户名
+                name: user.name || "未知用户",  // 存储用户名字
+                avatar: user.avatar || "default-avatar.png"  // 存储头像，若没有则为默认头像
             }));
 
             // 登录成功后跳转到主页面
@@ -142,6 +143,7 @@
     btn.disabled = false;
     btn.textContent = '登录';
 }
+
 console.log(localStorage.getItem("loggedInUser"))
     </script>
 </body>
