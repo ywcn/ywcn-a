@@ -487,10 +487,10 @@
             console.error('Supabase SDK未正确加载');
         }
         localStorage.setItem("loggedInUser", JSON.stringify({
-    id: user.id,
-    name: user.user_metadata.name || "未知用户",  // 确保存储 `name`
-    avatar: user.user_metadata.avatar_url || "default-avatar.png"  // 确保存储头像
-}));
+            id: user.id,
+            name: user.user_metadata.name || "未知用户",  // 确保存储 `name`
+            avatar: user.user_metadata.avatar_url || "default-avatar.png"  // 确保存储头像
+        }));
 
         const { createClient } = supabase;
         const supabaseClient = createClient(
@@ -540,41 +540,41 @@
         }
 
         async function saveCustomer(customer) {
-    const localUser = JSON.parse(localStorage.getItem("loggedInUser"));
-    if (!localUser || !localUser.id) {
-        alert("未获取到当前用户信息，请重新登录");
-        return { error: { message: "缺少用户信息" } };
-    }
+            const localUser = JSON.parse(localStorage.getItem("loggedInUser"));
+            if (!localUser || !localUser.id) {
+                alert("未获取到当前用户信息，请重新登录");
+                return { error: { message: "缺少用户信息" } };
+            }
 
-    customer.user_id = localUser.id;
+            customer.user_id = localUser.id;
 
-    if (customer.id) {
-        const { error } = await supabaseClient
-            .from('customers')
-            .update(customer)
-            .eq('id', customer.id);
-        return { error };
-    } else {
-        const safeCustomer = {};
-        for (const key in customer) {
-            const val = customer[key];
-            if (
-                val === undefined ||
-                (typeof val === 'object' && val !== null && Object.keys(val).length === 0)
-            ) {
-                safeCustomer[key] = null;
+            if (customer.id) {
+                const { error } = await supabaseClient
+                    .from('customers')
+                    .update(customer)
+                    .eq('id', customer.id);
+                return { error };
             } else {
-                safeCustomer[key] = val;
+                const safeCustomer = {};
+                for (const key in customer) {
+                    const val = customer[key];
+                    if (
+                        val === undefined ||
+                        (typeof val === 'object' && val !== null && Object.keys(val).length === 0)
+                    ) {
+                        safeCustomer[key] = null;
+                    } else {
+                        safeCustomer[key] = val;
+                    }
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('customers')
+                    .insert([safeCustomer])
+                    .select();
+                return { data: data?.[0], error };
             }
         }
-
-        const { data, error } = await supabaseClient
-            .from('customers')
-            .insert([safeCustomer])
-            .select();
-        return { data: data?.[0], error };
-    }
-}
 
 
 
@@ -953,32 +953,28 @@
         const user = JSON.parse(localStorage.getItem("loggedInUser"));
 
         if (!user) {
-            window.location.href = "login.html";
+            window.location.href = "login.html";  // 未登录跳转到登录页
         } else {
-            document.getElementById("userAvatar").src = user.avatar;
-            document.getElementById("userName").textContent = `欢迎您！${user.name}`;
+            document.getElementById("userAvatar").src = user.avatar || "default-avatar.png";
+            document.getElementById("userName").textContent = `欢迎您！${user.name || "未知用户"}`;
         }
-        
 
-        //换头像
+        // 换头像
         function changeAvatar() {
             const user = JSON.parse(localStorage.getItem("loggedInUser"));
-            const allUsers = JSON.parse(localStorage.getItem("allUsers"));
+            if (!user) {
+                alert("未获取到当前用户信息，请重新登录");
+                window.location.href = "login.html";  // 重定向到登录页面
+                return;
+            }
 
-            // 生成新的随机头像链接
             const randomSeed = Date.now() + Math.random();
             const newUrl = `https://i.pravatar.cc/150?u=${randomSeed}`;
 
-            // 更新头像地址
             user.avatar = newUrl;
-            allUsers[user.username].avatar = newUrl;
-
-            // 保存并更新页面
             localStorage.setItem("loggedInUser", JSON.stringify(user));
-            localStorage.setItem("allUsers", JSON.stringify(allUsers));
             document.getElementById("userAvatar").src = newUrl;
 
-            // 播放音效
             const avatarSound = document.getElementById('avatarSound');
             if (avatarSound) {
                 avatarSound.currentTime = 0;
@@ -988,7 +984,7 @@
             }
         }
 
-        //退出
+        // 退出登录
         function logout() {
             localStorage.removeItem("loggedInUser");
             window.location.href = "login.html";
