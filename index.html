@@ -483,19 +483,14 @@
     </div>
     <script>
         let currentEditId = null;
-        // 确保 Supabase SDK 加载成功
-if (!window.supabase) {
-    console.error('Supabase SDK未正确加载');
-}
-
-// 确保 Supabase SDK 正确加载并初始化
+         // 确保 Supabase SDK 正确加载并初始化
 if (!window.supabase) {
     console.error('Supabase SDK未正确加载');
 } else {
-    // 确保 supabase 对象被正确初始化
+    // 初始化 Supabase 客户端
     const supabase = window.supabase.createClient(
-        'https://mdgczfpcturvgtxjzrfc.supabase.co',  // Supabase URL
-        'your-public-anon-key'  // Supabase Key
+        'https://mdgczfpcturvgtxjzrfc.supabase.co',  // 替换为你的 Supabase URL
+        'your-public-anon-key'  // 替换为你的 Supabase 公共 API 密钥
     );
 
     // 获取用户数据的异步函数
@@ -504,20 +499,25 @@ if (!window.supabase) {
             // 获取当前登录的用户
             const { data: user, error } = await supabase.auth.getUser();
 
+            // 如果没有有效的用户会话，则提示错误并返回
             if (error) {
                 console.error('获取用户数据时发生错误:', error.message);
+                alert('用户未登录，请登录');
+                window.location.href = "login.html";  // 重定向到登录页面
                 return;
             }
 
+            // 如果用户存在，存储用户信息到 localStorage
             if (user) {
-                // 将用户数据存入 localStorage
                 localStorage.setItem("loggedInUser", JSON.stringify({
                     id: user.id,
                     name: user.user_metadata.name || "未知用户",  // 如果没有名字，显示“未知用户”
                     avatar: user.user_metadata.avatar_url || "default-avatar.png"  // 如果没有头像，使用默认头像
                 }));
-            } else {
-                console.log("没有登录的用户");
+
+                // 你可以根据需要做更多的处理，例如更新页面显示用户信息
+                document.getElementById("userAvatar").src = user.user_metadata.avatar_url || "default-avatar.png";
+                document.getElementById("userName").textContent = `欢迎您！${user.user_metadata.name || "未知用户"}`;
             }
         } catch (err) {
             console.error('获取用户数据时发生错误:', err);
@@ -527,6 +527,7 @@ if (!window.supabase) {
     // 调用获取用户数据的函数
     getUserData();
 }
+
 
 
         localStorage.setItem("loggedInUser", JSON.stringify({
