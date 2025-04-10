@@ -6,9 +6,7 @@
     <title>Panda Login Form | Coding Vibess</title>
     <link rel="icon" href="./img/恐龙.png">
     <link rel="stylesheet" href="panda.css">
-    <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
-    <!-- Stylesheet -->
 </head>
 
 <body>
@@ -44,10 +42,7 @@
 
     </div>
 
-
-    <!-- Script -->
     <script type="module">
-
         const usernameRef = document.getElementById("username");
         const passwordRef = document.getElementById("password");
         const errorDiv = document.getElementById("errorMsg");
@@ -111,33 +106,21 @@
             btn.disabled = true;
             btn.textContent = '登录中...';
 
-            try {
-                const res = await fetch(`${supabaseUrl}/rest/v1/users?username=eq.${username}`, {
-                    headers: {
-                        apikey: supabaseKey,
-                        Authorization: `Bearer ${supabaseKey}`
-                    }
-                });
+            // 从本地存储获取用户数据
+            const allUsers = JSON.parse(localStorage.getItem('allUsers'));
+            const user = allUsers[username];
 
-                const data = await res.json();
-
-                if (data.length !== 1) {
-                    errorDiv.textContent = "用户名不存在";
-                } else if (data[0].pwd !== password) {
-                    errorDiv.textContent = "密码错误";
-                } else {
-                    const user = data[0];
-                    localStorage.setItem("loggedInUser", JSON.stringify({
-                        username: user.username,
-                        name: user.name,
-                        avatar: user.avatar
-                    }));
-                    window.location.href = "index.html";
-                }
-
-            } catch (err) {
-                console.error("登录出错:", err);
-                errorDiv.textContent = "网络错误，请稍后再试";
+            if (!user) {
+                errorDiv.textContent = "用户名不存在";
+            } else if (user.password !== password) {
+                errorDiv.textContent = "密码错误";
+            } else {
+                localStorage.setItem("loggedInUser", JSON.stringify({
+                    username: user.username,
+                    name: user.name,
+                    avatar: user.avatar
+                }));
+                window.location.href = "index.html";
             }
 
             btn.disabled = false;
@@ -148,13 +131,6 @@
             e.preventDefault();
             login();
         });
-
-
-
-
-
-
-
     </script>
 </body>
 
