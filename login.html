@@ -116,6 +116,9 @@
 
         const data = await res.json();
 
+        // 打印数据，确保查询返回正确的用户信息
+        console.log("查询到的用户数据：", data);
+
         if (data.length !== 1) {
             errorDiv.textContent = "用户名不存在";
         } else if (data[0].pwd !== password) {
@@ -123,15 +126,12 @@
         } else {
             const user = data[0];
 
-            // 在控制台打印 `user` 对象，检查是否有 `id` 和 `username`
-            console.log("登录成功，用户信息：", user);
-
-            // 将用户的完整信息存储到 localStorage
+            // 确保完整的用户信息（包括 id 和 username）被存储到 localStorage
             localStorage.setItem("loggedInUser", JSON.stringify({
                 id: user.id,  // 存储用户 ID
                 username: user.username,  // 存储用户名
                 name: user.name || "未知用户",  // 存储用户名字
-                avatar: user.avatar || "https://i.pravatar.cc/40?u=default-avatar"  // 存储头像，若没有则为默认头像
+                avatar: user.avatar || "https://i.pravatar.cc/40?u=default-avatar"  // 存储头像
             }));
 
             // 登录成功后跳转到主页面
@@ -146,6 +146,7 @@
     btn.disabled = false;
     btn.textContent = '登录';
 }
+
 
 console.log(localStorage.getItem("loggedInUser"))
     </script>
