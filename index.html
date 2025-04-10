@@ -488,27 +488,46 @@ if (!window.supabase) {
     console.error('Supabase SDK未正确加载');
 }
 
-// 假设你从 Supabase 获取了 user 数据
-async function getUserData() {
-    try {
-        const { user, error } = await supabase.auth.getUser();
-        if (error) throw error;
+// 确保 Supabase SDK 正确加载并初始化
+if (!window.supabase) {
+    console.error('Supabase SDK未正确加载');
+} else {
+    // 确保 supabase 对象被正确初始化
+    const supabase = window.supabase.createClient(
+        'https://mdgczfpcturvgtxjzrfc.supabase.co',  // Supabase URL
+        'your-public-anon-key'  // Supabase Key
+    );
 
-        if (user) {
-            // 确保用户数据正确
-            localStorage.setItem("loggedInUser", JSON.stringify({
-                id: user.id,
-                name: user.user_metadata.name || "未知用户",  // 如果没有名字，显示“未知用户”
-                avatar: user.user_metadata.avatar_url || "default-avatar.png"  // 如果没有头像，使用默认头像
-            }));
+    // 获取用户数据的异步函数
+    async function getUserData() {
+        try {
+            // 获取当前登录的用户
+            const { data: user, error } = await supabase.auth.getUser();
+
+            if (error) {
+                console.error('获取用户数据时发生错误:', error.message);
+                return;
+            }
+
+            if (user) {
+                // 将用户数据存入 localStorage
+                localStorage.setItem("loggedInUser", JSON.stringify({
+                    id: user.id,
+                    name: user.user_metadata.name || "未知用户",  // 如果没有名字，显示“未知用户”
+                    avatar: user.user_metadata.avatar_url || "default-avatar.png"  // 如果没有头像，使用默认头像
+                }));
+            } else {
+                console.log("没有登录的用户");
+            }
+        } catch (err) {
+            console.error('获取用户数据时发生错误:', err);
         }
-    } catch (err) {
-        console.error("获取用户数据时发生错误:", err);
     }
+
+    // 调用获取用户数据的函数
+    getUserData();
 }
 
-// 调用获取用户数据的函数
-getUserData();
 
         localStorage.setItem("loggedInUser", JSON.stringify({
             id: user.id,
