@@ -130,6 +130,7 @@
                 name: user.name || "未知用户",  // 存储用户名字
                 avatar: user.avatar || "default-avatar.png"  // 存储头像，若没有则为默认头像
             }));
+            console.log("存储的用户信息:", localStorage.getItem("loggedInUser"));
 
             // 登录成功后跳转到主页面
             window.location.href = "index.html";
