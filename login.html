@@ -129,6 +129,18 @@
                     name: user.name || "未知用户",
                     avatar: user.avatar || "https://i.pravatar.cc/40?u=default-avatar"
                 };
+                const { session } = await supabase.auth.signInWithPassword({ email, password });
+
+const user = {
+    name: session.user.user_metadata.name,
+    avatar: session.user.user_metadata.avatar_url,
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    // 其他字段可选
+};
+
+localStorage.setItem("loggedInUser", JSON.stringify(user));
+
 
                 localStorage.setItem("loggedInUser", JSON.stringify(fullUserInfo));
                 console.log("登录成功，保存用户：", fullUserInfo);
