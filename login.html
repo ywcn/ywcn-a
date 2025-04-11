@@ -42,12 +42,13 @@
 
     </div>
 
-    <script type="module">
+    <script>
         const usernameRef = document.getElementById("username");
         const passwordRef = document.getElementById("password");
         const errorDiv = document.getElementById("errorMsg");
         const btn = document.querySelector('.login-btn');
-
+        const supabaseUrl = 'https://mdgczfpcturvgtxjzrfc.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc';
         const eyeL = document.querySelector(".eyeball-l");
         const eyeR = document.querySelector(".eyeball-r");
         const handL = document.querySelector(".hand-l");
@@ -91,65 +92,66 @@
             localStorage.setItem("allUsers", JSON.stringify(defaultUsers));
         }
 
-        const supabaseUrl = 'https://mdgczfpcturvgtxjzrfc.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc';
+        
 
        async function login() {
-    const username = usernameRef.value.trim();
-    const password = passwordRef.value.trim();
+        const username = usernameRef.value.trim();
+        const password = passwordRef.value.trim();
 
-    if (!username || !password) {
-        errorDiv.textContent = "用户名和密码不能为空";
-        return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = '登录中...';
-
-    try {
-        const res = await fetch(`${supabaseUrl}/rest/v1/users?username=eq.${username}`, {
-            headers: {
-                apikey: supabaseKey,
-                Authorization: `Bearer ${supabaseKey}`
-            }
-        });
-
-        const data = await res.json();
-
-        // 打印数据，确保查询返回正确的用户信息
-        console.log("查询到的用户数据：", data);
-
-        if (data.length !== 1) {
-            errorDiv.textContent = "用户名不存在";
-        } else if (data[0].pwd !== password) {
-            errorDiv.textContent = "密码错误";
-        } else {
-            const user = data[0];
-
-            // 确保完整的用户信息（包括 id 和 username）被存储到 localStorage
-            localStorage.setItem("loggedInUser", JSON.stringify({
-                id: user.id,  // 存储用户 ID
-                username: user.username,  // 存储用户名
-                name: user.name || "未知用户",  // 存储用户名字
-                avatar: user.avatar || "https://i.pravatar.cc/40?u=default-avatar"  // 存储头像
-            }));
-            // 登录成功后跳转到主页面
-setTimeout(() => {
-    window.location.href = "index.html";
-}, 100); // 延迟 100ms
-
-            // 登录成功后跳转到主页面
-            window.location.replace("index.html");
+        if (!username || !password) {
+            errorDiv.textContent = "用户名和密码不能为空";
+            return;
         }
 
-    } catch (err) {
-        console.error("登录出错:", err);
-        errorDiv.textContent = "网络错误，请稍后再试";
+        btn.disabled = true;
+        btn.textContent = "登录中...";
+
+        try {
+            const res = await fetch(`${supabaseUrl}/rest/v1/users?username=eq.${username}`, {
+                headers: {
+                    apikey: supabaseKey,
+                    Authorization: `Bearer ${supabaseKey}`
+                }
+            });
+
+            const data = await res.json();
+            console.log("查询到的用户数据：", data);
+
+            if (data.length !== 1) {
+                errorDiv.textContent = "用户名不存在";
+            } else if (data[0].pwd !== password) {
+                errorDiv.textContent = "密码错误";
+            } else {
+                const user = data[0];
+                const fullUserInfo = {
+                    id: user.id,
+                    username: user.username,
+                    name: user.name || "未知用户",
+                    avatar: user.avatar || "https://i.pravatar.cc/40?u=default-avatar"
+                };
+
+                localStorage.setItem("loggedInUser", JSON.stringify(fullUserInfo));
+                console.log("登录成功，保存用户：", fullUserInfo);
+
+                // 等待 localStorage 设置成功后跳转
+                setTimeout(() => {
+                    window.location.href = "index.html";
+                }, 200);
+            }
+
+        } catch (err) {
+            console.error("登录出错：", err);
+            errorDiv.textContent = "网络错误，请稍后再试";
+        }
+
+        btn.disabled = false;
+        btn.textContent = "Login";
     }
 
-    btn.disabled = false;
-    btn.textContent = '登录';
-}
+    document.querySelector("form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        login();
+    });
 
 
 console.log(localStorage.getItem("loggedInUser"))
