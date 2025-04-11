@@ -503,7 +503,22 @@ if (!user) {
 if (!window.supabase) {
     console.error('Supabase SDK未正确加载');
 } 
-
+ // 👇 将本地 access_token 和 refresh_token 设置到 Supabase
+    if (user.access_token && user.refresh_token) {
+        supabaseClient.auth.setSession({
+            access_token: user.access_token,
+            refresh_token: user.refresh_token
+        }).then(({ data, error }) => {
+            if (error) {
+                console.error("同步 Supabase 会话失败：", error);
+            } else {
+                console.log("Supabase 会话已同步");
+            }
+        });
+    } else {
+        console.warn("本地用户信息缺少 token，可能会导致授权失败");
+    }
+}
    
 
 
