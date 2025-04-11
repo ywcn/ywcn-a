@@ -8,52 +8,63 @@
     <link rel="icon" href="./img/恐龙.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* 使用CSS变量实现主题切换 */
-        :root {
-            --bg-color: #fff;
-            --text-color: #000;
-            --primary-color: #82aae2;
-        }
+       :root {
+    --bg-color: #fff;
+    --text-color: #000;
+    --primary-color: #82aae2;
+}
 
-        body.dark-mode {
-            --bg-color: #333;
-            --text-color: #fff;
-            --primary-color: #2c3e50;
-        }
+body.dark-mode {
+    --bg-color: #333;
+    --text-color: #fff;
+    --primary-color: #2c3e50;
+}
 
-        .user-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #82aae2;
-            padding: 10px 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
+body.light-mode {
+    --bg-color: #fff;
+    --text-color: #000;
+    --primary-color: #82aae2;
+}
 
-        .btn {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
 
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+.user-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--primary-color);
+    padding: 10px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
 
-        .user-info img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-        }
+.btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
 
-        h1 {
-            margin: 5px auto;
-            text-align: center;
-        }
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-info img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+h1 {
+    margin: 5px auto;
+    text-align: center;
+}
+
 
         /* 布局容器：左侧粘贴区 + 右侧手动输入区 */
         .container {
@@ -1105,19 +1116,20 @@ function changeAvatar() {
         });
 
         const themeToggle = document.getElementById('theme-toggle');
-        const body = document.body;
+const body = document.body;
 
-        themeToggle.addEventListener('click', () => {
-            // 切换 body 的主题
-            body.classList.toggle('dark-mode');
-            body.classList.toggle('light-mode');
+themeToggle.addEventListener('click', () => {
+    // 切换 body 的主题
+    body.classList.toggle('dark-mode');
+    body.classList.toggle('light-mode');
 
-            // 切换按钮状态
-            themeToggle.classList.toggle('active');
-        });
+    // 切换按钮状态
+    themeToggle.classList.toggle('active');
+});
 
-        // 初始状态设为白天模式
-        body.classList.add('light-mode');
+// 初始状态设为白天模式
+body.classList.add('light-mode');
+
 
 
 
