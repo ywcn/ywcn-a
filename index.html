@@ -494,16 +494,15 @@ if (!user) {
     document.getElementById("userName").textContent = `欢迎您！${user.name || "未知用户"}`;
 }
 
+        const supabaseClient = supabase.createClient(
+        'https://mdgczfpcturvgtxjzrfc.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'
+    );
         let currentEditId = null;
          // 确保 Supabase SDK 正确加载并初始化
 if (!window.supabase) {
     console.error('Supabase SDK未正确加载');
-} else {
-    // 初始化 Supabase 客户端
-    const supabase = window.supabase.createClient(
-        'https://mdgczfpcturvgtxjzrfc.supabase.co',  // 替换为你的 Supabase URL
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'  // 替换为你的 Supabase 公共 API 密钥
-    );
+} 
 
    
 
@@ -511,11 +510,7 @@ if (!window.supabase) {
 
         
 
-        const { createClient } = supabase;
-        const supabaseClient = createClient(
-            'https://mdgczfpcturvgtxjzrfc.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'
-        );
+       
         // 初始化音效：首次点击触发音频权限
         document.addEventListener('click', () => {
             const sound = document.getElementById('deleteSound');
