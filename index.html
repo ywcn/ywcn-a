@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>客户信息登记</title>
     <link rel="icon" href="./img/恐龙.png">
-    <<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
     <style>
        :root {
     --bg-color: #fff;
@@ -496,7 +496,7 @@ h1 {
     <script>
         console.log("尝试读取 localStorage.loggedInUser：", localStorage.getItem("loggedInUser"));
 
-
+       let currentEditId = null;  // 定义当前编辑客户的ID
          // ✅ 初始化 supabaseClient（必须放最前面）
 const supabaseClient = supabase.createClient(
     'https://mdgczfpcturvgtxjzrfc.supabase.co',
@@ -860,32 +860,46 @@ function renderTable(customers) {
 }
 
         // 手动添加或更新客户信息
-        document.getElementById('addCustomerBtn').addEventListener('click', async () => {
-            // ...校验逻辑...
+document.getElementById('addCustomerBtn').addEventListener('click', async () => {
+    // 校验逻辑略
 
-            const customerData = {
-                name,
-                phone,
-                address,
-                amount: parseFloat(amount),
-                customerService,
-                note,
-                deliveryTime
-            };
+    // 使用驼峰命名获取表单值
+    const customerData = {
+        name,
+        phone,
+        address,
+        amount: parseFloat(amount),
+        customerService,  // 前端使用驼峰命名
+        note,
+        deliveryTime  // 前端使用驼峰命名
+    };
 
-            if (currentEditId) {
-                customerData.id = currentEditId;
-            }
+    // 将字段转换为数据库使用的蛇形命名
+    const dataToSave = {
+        name,
+        phone,
+        address,
+        amount: parseFloat(amount),
+        customer_service: customerService,  // 转换为蛇形命名
+        note,
+        delivery_time: deliveryTime  // 转换为蛇形命名
+    };
 
-            const { error } = await saveCustomer(customerData);
+    // 如果当前有编辑 ID，更新该客户
+    if (currentEditId) {
+        dataToSave.id = currentEditId;
+    }
 
-            if (!error) {
-                loadData();
-                clearForm();
-            } else {
-                alert('操作失败：' + error.message);
-            }
-        });
+    // 保存到数据库
+    const { error } = await saveCustomer(dataToSave);  // 保存数据到 Supabase
+
+    if (!error) {
+        loadData();  // 加载最新数据
+        clearForm();  // 清空表单
+    } else {
+        alert('操作失败：' + error.message);  // 出错时提示
+    }
+});
 
         // 清空手动添加区表单
         function clearForm() {
