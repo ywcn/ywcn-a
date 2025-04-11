@@ -561,19 +561,59 @@ if (!window.supabase) {
                 sound.muted = false;
             });
         }, { once: true });
-        async function loadData() {
-            const { data, error } = await supabaseClient.from('customers').select('*').order('id');
-            if (error) return alert('加载失败：' + error.message);
-            async function del(id) {
-                const { error } = await supabaseClient.from('customers').delete().eq('id', id);
-                if (!error) {
-                    document.getElementById('deleteSound').play();
-                    loadData();
-                } else {
-                    alert('删除失败：' + error.message);
-                }
-            }
-        }
+       // 删除客户的功能
+async function del(id) {
+    const { error } = await supabaseClient.from('customers').delete().eq('id', id);
+    if (!error) {
+        document.getElementById('deleteSound').play(); // 播放删除声音
+        loadData(); // 刷新数据
+    } else {
+        alert('删除失败：' + error.message);
+    }
+}
+
+// 加载数据并渲染表格
+async function loadData() {
+    const { data, error } = await supabaseClient.from('customers').select('*').order('id');
+    if (error) {
+        return alert('加载失败：' + error.message);
+    }
+
+    // 渲染客户数据
+    renderTable(data);
+}
+
+// 渲染客户数据到表格
+function renderTable(customers) {
+    const tbody = document.getElementById('customerTableBody');
+    tbody.innerHTML = '';
+
+    customers.forEach((cust, index) => {
+        const tr = document.createElement('tr');
+
+        const tdName = document.createElement('td');
+        tdName.textContent = cust.name;
+        tr.appendChild(tdName);
+
+        const tdPhone = document.createElement('td');
+        tdPhone.textContent = cust.phone;
+        tr.appendChild(tdPhone);
+
+        const tdAddress = document.createElement('td');
+        tdAddress.textContent = cust.address;
+        tr.appendChild(tdAddress);
+
+        const tdActions = document.createElement('td');
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = '删除';
+        deleteBtn.onclick = () => del(cust.id); // 使用 cust.id 调用删除函数
+        tdActions.appendChild(deleteBtn);
+        tr.appendChild(tdActions);
+
+        tbody.appendChild(tr);
+    });
+}
+
 
 
         loadData();
@@ -864,13 +904,25 @@ if (!window.supabase) {
         }
 
         // 删除单个客户信息
-        function deleteCustomer(index) {
-            if (confirm('确定删除该客户信息？')) {
-                customers.splice(index, 1);
-                saveToLocalStorage();
-                renderTable(customers);
-            }
+        async function deleteCustomer(index) {
+    if (confirm('确定删除该客户信息？')) {
+        const custId = customers[index].id; // 获取要删除的客户 ID
+
+        // 使用 Supabase API 删除客户
+        const { error } = await supabase
+            .from('customers')
+            .delete()
+            .eq('id', custId); // 使用 ID 删除
+
+        if (error) {
+            alert('删除失败：' + error.message);
+        } else {
+            // 删除成功后，重新加载数据
+            loadData();  // 重新从 Supabase 获取数据
+            renderTable(customers); // 渲染更新后的数据
         }
+    }
+}
 
         // 一键删除所有客户信息
         document.getElementById('deleteAllBtn').addEventListener('click', () => {
