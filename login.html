@@ -12,8 +12,8 @@
 <body>
     <div class="container">
         <form>
-            <label for="username">Username</label>
-            <input type="text" id="username" placeholder="Enter username" /><br />
+            <label for="email">email</label>
+            <input type="email" id="email" placeholder="Enter email" /><br />
             <label for="password">Password</label>
             <input type="password" id="password" placeholder="Password" /><br />
             <button class="login-btn">Login</button>
@@ -92,7 +92,41 @@
             localStorage.setItem("allUsers", JSON.stringify(defaultUsers));
         }
 
-        
+        const supabaseClient = supabase.createClient(
+  'https://mdgczfpcturvgtxjzrfc.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc''
+);
+
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  const { data: { session }, error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    alert("登录失败：" + error.message);
+    return;
+  }
+
+  const user = session.user;
+
+  // 登录成功，保存用户信息 + token
+  const fullUserInfo = {
+    id: user.id,
+    email: user.email,
+    name: user.user_metadata.name || "用户",
+    avatar: user.user_metadata.avatar_url || `https://i.pravatar.cc/40?u=${user.email}`,
+    access_token: session.access_token,
+    refresh_token: session.refresh_token
+  };
+
+  localStorage.setItem("loggedInUser", JSON.stringify(fullUserInfo));
+  window.location.href = "index.html";
+});
+
 
        async function login() {
         const username = usernameRef.value.trim();
