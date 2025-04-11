@@ -485,15 +485,20 @@
         console.log("尝试读取 localStorage.loggedInUser：", localStorage.getItem("loggedInUser"));
 
 const user = JSON.parse(localStorage.getItem("loggedInUser"));
-if (!user) {
-    console.warn("未获取到用户，跳转回 login.html");
+if (!user || !user.access_token) {
+    console.warn("本地用户信息缺少 token，跳转回 login.html");
     window.location.href = "login.html";
 } else {
-    console.log("获取到用户：", user);
-    document.getElementById("userAvatar").src = user.avatar || "default-avatar.png";
-    document.getElementById("userName").textContent = `欢迎您！${user.name || "未知用户"}`;
-}
+    // 恢复会话
+    supabaseClient.auth.setSession({
+        access_token: user.access_token,
+        refresh_token: user.refresh_token
+    });
 
+    // 显示用户信息
+    document.getElementById("userAvatar").src = user.avatar;
+    document.getElementById("userName").textContent = `欢迎您！${user.name}`;
+}
         const supabaseClient = supabase.createClient(
         'https://mdgczfpcturvgtxjzrfc.supabase.co',
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'
