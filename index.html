@@ -383,7 +383,7 @@ h1 {
                         <option value="13406066514">李东华</option>
                         <option value="15965638113">刘小兵</option>
                         <option value="13287798375 ">贾国祥</option>
-                        <option value="13287798375">聂奎</option>
+                        <option value="15668467320">聂奎</option>
                         <option value="18454181996">郭晓邦</option>
                     </select>
                 </div>
@@ -807,18 +807,22 @@ if (!window.supabase) {
 
         // 将选中的客户加载到表单上进行编辑
         function loadCustomerToForm(index) {
-            const cust = customers[index];
-            currentEditIndex = index;
-            document.getElementById('name').value = cust.name;
-            document.getElementById('phone').value = cust.phone;
-            document.getElementById('address').value = cust.address;
-            document.getElementById('amount').value = cust.amount;
-            document.getElementById('customerService').value = cust.customerService;
-            document.getElementById('note').value = cust.note;
-            document.getElementById('deliveryTime').value = cust.deliveryTime;
-            // 将添加按钮文本改为“更新”
-            document.getElementById('addCustomerBtn').textContent = '更新';
-        }
+    const cust = customers[index];
+    currentEditIndex = index;
+
+    document.getElementById('name').value = cust.name || '';
+    document.getElementById('phone').value = cust.phone || '';
+    document.getElementById('address').value = cust.address || '';
+    document.getElementById('amount').value = cust.amount || '';
+    document.getElementById('customerService').value = cust.customerService || '';
+    document.getElementById('note').value = cust.note || '';
+    
+    // 日期格式化后再赋值，防止出现 invalid 格式或 undefined
+    document.getElementById('deliveryTime').value = cust.deliveryTime ? formatDate(cust.deliveryTime) : '';
+
+    // 将添加按钮文本改为“更新”
+    document.getElementById('addCustomerBtn').textContent = '更新';
+}
 
         // 手动添加或更新客户信息
         document.getElementById('addCustomerBtn').addEventListener('click', async () => {
@@ -829,9 +833,9 @@ if (!window.supabase) {
                 phone,
                 address,
                 amount: parseFloat(amount),
-                customer_service: customerService,
+                customerService,
                 note,
-                delivery_time: deliveryTime
+                deliveryTime
             };
 
             if (currentEditId) {
