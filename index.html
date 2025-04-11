@@ -672,9 +672,20 @@ if (!window.supabase) {
                 tdNote.textContent = cust.note || '';
                 tr.appendChild(tdNote);
 
-                const tdDelivery = document.createElement('td');
-                tdDelivery.textContent = cust.deliveryTime || '';
-                tr.appendChild(tdDelivery);
+              // 日期单元格
+              function formatDate(dateStr) {
+              if (!dateStr) return '';
+              const date = new Date(dateStr);
+              return isNaN(date) ? '' : date.toISOString().split('T')[0];
+            }
+            const tdDelivery = document.createElement('td');
+            tdDelivery.textContent = formatDate(cust.deliveryTime);
+            tr.appendChild(tdDelivery);
+
+               
+
+
+
 
                 // 操作：编辑、删除
                 const tdActions = document.createElement('td');
