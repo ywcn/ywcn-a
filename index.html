@@ -484,25 +484,35 @@
     <script>
         console.log("尝试读取 localStorage.loggedInUser：", localStorage.getItem("loggedInUser"));
 
-const user = JSON.parse(localStorage.getItem("loggedInUser"));
-if (!user || !user.access_token) {
-    console.warn("本地用户信息缺少 token，跳转回 login.html");
-    window.location.href = "login.html";
-} else {
-    // 恢复会话
-    supabaseClient.auth.setSession({
-        access_token: user.access_token,
-        refresh_token: user.refresh_token
-    });
 
-    // 显示用户信息
-    document.getElementById("userAvatar").src = user.avatar;
-    document.getElementById("userName").textContent = `欢迎您！${user.name}`;
-}
+         // ✅ 初始化 supabaseClient（必须放最前面）
         const supabaseClient = supabase.createClient(
         'https://mdgczfpcturvgtxjzrfc.supabase.co',
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'
     );
+       
+    // ✅ 再进行用户校验和 token 设置
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (!user || !user.access_token) {
+        console.warn("本地用户信息缺少 token，跳转回 login.html");
+        window.location.href = "login.html";
+    } else {
+        supabaseClient.auth.setSession({
+            access_token: user.access_token,
+            refresh_token: user.refresh_token
+        }).then(({ error }) => {
+            if (error) {
+                console.error("会话同步失败", error);
+                window.location.href = "login.html";
+            } else {
+                console.log("Supabase 会话已同步");
+                document.getElementById("userAvatar").src = user.avatar;
+                document.getElementById("userName").textContent = `欢迎您！${user.name}`;
+            }
+        });
+    }
+
+
         let currentEditId = null;
          // 确保 Supabase SDK 正确加载并初始化
 if (!window.supabase) {
