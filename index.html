@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>客户信息登记</title>
     <link rel="icon" href="./img/恐龙.png">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+"></script>
     <style>
        :root {
     --bg-color: #fff;
@@ -497,53 +498,47 @@ h1 {
 
 
          // ✅ 初始化 supabaseClient（必须放最前面）
-        const supabaseClient = supabase.createClient(
-        'https://mdgczfpcturvgtxjzrfc.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'
-    );
-       
-    // ✅ 再进行用户校验和 token 设置
-    const user = JSON.parse(localStorage.getItem("loggedInUser"));
-    if (!user || !user.access_token) {
-        console.warn("本地用户信息缺少 token，跳转回 login.html");
-        window.location.href = "login.html";
-    } else {
-        supabaseClient.auth.setSession({
-            access_token: user.access_token,
-            refresh_token: user.refresh_token
-        }).then(({ error }) => {
-            if (error) {
-                console.error("会话同步失败", error);
-                window.location.href = "login.html";
-            } else {
-                console.log("Supabase 会话已同步");
-                document.getElementById("userAvatar").src = user.avatar;
-                document.getElementById("userName").textContent = `欢迎您！${user.name}`;
-            }
-        });
-    }
+const supabaseClient = supabase.createClient(
+    'https://mdgczfpcturvgtxjzrfc.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'
+);
 
+// ✅ 用户校验和 token 设置
+const user = JSON.parse(localStorage.getItem("loggedInUser"));
+if (!user || !user.access_token) {
+    console.warn("本地用户信息缺少 token，跳转回 login.html");
+    window.location.href = "login.html";
+} else {
+    supabaseClient.auth.setSession({
+        access_token: user.access_token,
+        refresh_token: user.refresh_token
+    }).then(({ error }) => {
+        if (error) {
+            console.error("会话同步失败", error);
+            window.location.href = "login.html";
+        } else {
+            console.log("Supabase 会话已同步");
+            document.getElementById("userAvatar").src = user.avatar;
+            document.getElementById("userName").textContent = `欢迎您！${user.name}`;
+        }
+    });
+}
 
-        let currentEditId = null;
-         // 确保 Supabase SDK 正确加载并初始化
-if (!window.supabase) {
+// 确保 Supabase SDK 正确加载并初始化
+if (!supabaseClient) {
     console.error('Supabase SDK未正确加载');
 } 
- // 👇 将本地 access_token 和 refresh_token 设置到 Supabase
-    if (user.access_token && user.refresh_token) {
-        supabaseClient.auth.setSession({
-            access_token: user.access_token,
-            refresh_token: user.refresh_token
-        }).then(({ data, error }) => {
-            if (error) {
-                console.error("同步 Supabase 会话失败：", error);
-            } else {
-                console.log("Supabase 会话已同步");
-            }
-        });
+
+// 加载数据
+async function loadData() {
+    const { data, error } = await supabaseClient.from('customers').select('*').order('id');
+    if (error) {
+        console.error('加载数据失败：', error);
     } else {
-        console.warn("本地用户信息缺少 token，可能会导致授权失败");
+        renderTable(data);
     }
+}
+
 
    
 
@@ -586,7 +581,7 @@ async function loadData() {
 // 渲染客户数据到表格
 function renderTable(customers) {
     const tbody = document.getElementById('customerTableBody');
-    tbody.innerHTML = '';
+    tbody.innerHTML = '';  // 清空表格
 
     customers.forEach((cust, index) => {
         const tr = document.createElement('tr');
@@ -603,18 +598,18 @@ function renderTable(customers) {
         tdAddress.textContent = cust.address;
         tr.appendChild(tdAddress);
 
+        // 添加删除按钮
         const tdActions = document.createElement('td');
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = '删除';
-        deleteBtn.onclick = () => del(cust.id); // 使用 cust.id 调用删除函数
+        deleteBtn.classList.add('btn-delete');
+        deleteBtn.onclick = () => deleteCustomer(index);  // 绑定点击事件
         tdActions.appendChild(deleteBtn);
         tr.appendChild(tdActions);
 
         tbody.appendChild(tr);
     });
 }
-
-
 
         loadData();
 
@@ -905,22 +900,18 @@ function renderTable(customers) {
 
         // 删除单个客户信息
         async function deleteCustomer(index) {
-    if (confirm('确定删除该客户信息？')) {
-        const custId = customers[index].id; // 获取要删除的客户 ID
+    const custId = customers[index].id;  // 获取要删除的客户 ID
 
-        // 使用 Supabase API 删除客户
-        const { error } = await supabase
-            .from('customers')
-            .delete()
-            .eq('id', custId); // 使用 ID 删除
+    const { error } = await supabaseClient
+        .from('customers')  // 正确调用 from('customers')
+        .delete()
+        .eq('id', custId); // 使用 ID 删除
 
-        if (error) {
-            alert('删除失败：' + error.message);
-        } else {
-            // 删除成功后，重新加载数据
-            loadData();  // 重新从 Supabase 获取数据
-            renderTable(customers); // 渲染更新后的数据
-        }
+    if (error) {
+        alert('删除失败：' + error.message);
+    } else {
+        document.getElementById('deleteSound').play();  // 播放删除声音
+        loadData();  // 刷新数据
     }
 }
 
