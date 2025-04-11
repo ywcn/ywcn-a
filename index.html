@@ -884,7 +884,14 @@ document.getElementById('addCustomerBtn').addEventListener('click', async () => 
         note,
         delivery_time: deliveryTime  // 转换为蛇形命名
     };
-
+    console.log("name:", name);
+    console.log("phone:", phone);
+    console.log("address:", address);
+    console.log("amount:", amount);
+    console.log("customerService:", customerService);
+    console.log("note:", note);
+    console.log("deliveryTime:", deliveryTime);
+    console.log("Constructed customerData:", customerData);
     // 如果当前有编辑 ID，更新该客户
     if (currentEditId) {
         dataToSave.id = currentEditId;
