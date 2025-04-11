@@ -539,6 +539,10 @@ async function loadData() {
     }
 }
 
+function saveToLocalStorage() {
+    // 将 customers 数组转化为 JSON 字符串并存储到 localStorage
+    localStorage.setItem('customers', JSON.stringify(customers));
+}
 
    
 
@@ -753,24 +757,25 @@ function renderTable(customers) {
 
         // 新增供货商管理功能
         function openSupplierModal(index) {
-            currentCustomerIndex = index;
-            const customer = customers[index];
-            const supplierList = document.getElementById('supplierList');
+    currentCustomerIndex = index;
+    const customer = customers[index];
+    const supplierList = document.getElementById('supplierList');
 
-            supplierList.innerHTML = customer.suppliers?.map((supplier, i) => `
-    <div class="supplier-item ${customer.selectedSuppliers?.includes(supplier) ? 'selected' : ''}">
-        <input type="checkbox" ${customer.selectedSuppliers?.includes(supplier) ? 'checked' : ''}
-            onchange="toggleSupplier(this, '${supplier}')">
+    supplierList.innerHTML = customer.suppliers?.map((supplier, i) => `
+        <div class="supplier-item ${customer.selectedSuppliers?.includes(supplier) ? 'selected' : ''}">
+            <input type="checkbox" ${customer.selectedSuppliers?.includes(supplier) ? 'checked' : ''}
+                onchange="toggleSupplier(this, '${supplier}')">
             <span>${supplier}</span>
             <div class="supplier-actions">
                 <button onclick="editSupplier(event, ${i})" class="btn-edit">修改</button>
                 <button onclick="deleteSupplier(event, ${i})" class="btn-delete">删除</button>
             </div>
-    </div>
+        </div>
     `).join('') || '<div>暂无供货商</div>';
 
-            document.getElementById('supplierModal').style.display = 'flex';
-        }
+    document.getElementById('supplierModal').style.display = 'flex';
+}
+        
         //给newSupplierName输入框添加键盘事件
         document.getElementById('newSupplierName').addEventListener('keydown', function (event) {
             if (event.key === 'Enter') {
@@ -782,63 +787,123 @@ function renderTable(customers) {
             document.getElementById('supplierModal').style.display = 'none';
         }
 
-        function addSupplier() {
-            const input = document.getElementById('newSupplierName');
-            const name = input.value.trim();
-            if (!name) return;
+        async function addSupplier() {
+    const newSupplierName = document.getElementById('newSupplierName').value.trim();
+    if (!newSupplierName) return alert('请填写供应商名称');
 
-            const customer = customers[currentCustomerIndex];
-            if (!customer.suppliers) customer.suppliers = [];
-            if (!customer.selectedSuppliers) customer.selectedSuppliers = [];
+    const customer = customers[currentCustomerIndex];
+    
+    // 在当前客户中添加新的供应商
+    customer.suppliers = customer.suppliers || [];
+    customer.suppliers.push(newSupplierName);
 
-            if (!customer.suppliers.includes(name)) {
-                customer.suppliers.push(name);
-                openSupplierModal(currentCustomerIndex);
-                input.value = '';
-            }
-        }
+    // 保存到 Supabase
+    const { error } = await supabaseClient
+        .from('suppliers')
+        .insert([{ name: newSupplierName, customer_id: customer.id }]); // 假设有 customer_id 外键关联
 
-        function deleteSupplier(event, index) {
-            event.stopPropagation();
-            const customer = customers[currentCustomerIndex];
-            const deletedSupplier = customer.suppliers[index];
-            customer.suppliers.splice(index, 1);
-            customer.selectedSuppliers = customer.selectedSuppliers.filter(s => s !== deletedSupplier);
-            openSupplierModal(currentCustomerIndex);
-        }
+    if (error) {
+        alert('保存供应商失败：' + error.message);
+    } else {
+        alert('供应商添加成功！');
+        loadData(); // 重新加载客户数据
+    }
 
-        function editSupplier(event, index) {
-            event.stopPropagation();
-            const newName = prompt('请输入新的供货商名称：');
-            if (newName) {
-                const customer = customers[currentCustomerIndex];
-                const oldName = customer.suppliers[index];
-                customer.suppliers[index] = newName;
-                customer.selectedSuppliers = customer.selectedSuppliers.map(s =>
-                    s === oldName ? newName : s
-                );
-                openSupplierModal(currentCustomerIndex);
-            }
-        }
+    document.getElementById('newSupplierName').value = ''; // 清空输入框
+}
 
-        function toggleSupplier(checkbox, supplierName) {
-            const customer = customers[currentCustomerIndex];
-            const index = customer.selectedSuppliers.indexOf(supplierName);
 
-            if (checkbox.checked && index === -1) {
-                customer.selectedSuppliers.push(supplierName);
-            } else if (!checkbox.checked && index !== -1) {
-                customer.selectedSuppliers.splice(index, 1);
-            }
+       async function deleteSupplier(event, supplierIndex) {
+    const customer = customers[currentCustomerIndex];
+    const supplierToDelete = customer.suppliers[supplierIndex];
 
-            checkbox.parentElement.classList.toggle('selected', checkbox.checked);
-        }
+    const confirmDelete = confirm(`确定删除供货商：${supplierToDelete}?`);
+    if (!confirmDelete) return;
 
-        function saveSuppliers() {
-            saveToLocalStorage();
-            renderTable(customers); // 更新表格中的状态显示
-            closeSupplierModal();
-        }
+    // 从当前客户的供应商列表中删除
+    customer.suppliers = customer.suppliers.filter(supplier => supplier !== supplierToDelete);
+
+    // 从 Supabase 删除
+    const { error } = await supabaseClient
+        .from('suppliers')
+        .delete()
+        .eq('name', supplierToDelete) // 假设根据名字删除供应商
+
+    if (error) {
+        alert('删除供应商失败：' + error.message);
+    } else {
+        alert('供应商删除成功！');
+        loadData(); // 重新加载客户数据
+    }
+}
+
+        async function editSupplier(event, supplierIndex) {
+    const newSupplierName = prompt('请输入新的供应商名称：', customers[currentCustomerIndex].suppliers[supplierIndex]);
+    if (!newSupplierName) return;
+
+    const customer = customers[currentCustomerIndex];
+    customer.suppliers[supplierIndex] = newSupplierName;
+
+    // 更新 Supabase 中的供应商名称
+    const { error } = await supabaseClient
+        .from('suppliers')
+        .update({ name: newSupplierName })
+        .eq('name', customers[currentCustomerIndex].suppliers[supplierIndex]);
+
+    if (error) {
+        alert('修改供应商失败：' + error.message);
+    } else {
+        alert('供应商修改成功！');
+        loadData(); // 重新加载客户数据
+    }
+}
+
+
+        async function toggleSupplier(checkbox, supplierName) {
+    const customer = customers[currentCustomerIndex];
+
+    // 如果供货商被选中，则将其添加到 selectedSuppliers 中，否则移除
+    if (checkbox.checked) {
+        if (!customer.selectedSuppliers) customer.selectedSuppliers = [];
+        customer.selectedSuppliers.push(supplierName);
+    } else {
+        customer.selectedSuppliers = customer.selectedSuppliers.filter(supplier => supplier !== supplierName);
+    }
+
+    // 更新到 Supabase
+    const { error } = await supabaseClient
+        .from('customers')
+        .update({ selectedSuppliers: customer.selectedSuppliers })
+        .eq('id', customer.id);
+
+    if (error) {
+        alert('更新供货商状态失败：' + error.message);
+    } else {
+        alert('供货商状态更新成功！');
+    }
+}
+
+        
+
+
+        async function saveSuppliers() {
+    const customer = customers[currentCustomerIndex];
+
+    // 更新当前客户的供应商列表到 Supabase
+    const { error } = await supabaseClient
+        .from('customers')
+        .update({ suppliers: customer.suppliers })
+        .eq('id', customer.id);
+
+    if (error) {
+        alert('保存供应商失败：' + error.message);
+    } else {
+        // 如果没有错误，更新表格和关闭供应商模态框
+        renderTable(customers); // 更新表格中的状态显示
+        closeSupplierModal();    // 关闭模态框
+    }
+}
+
 
         // 将选中的客户加载到表单上进行编辑
         function loadCustomerToForm(index) {
