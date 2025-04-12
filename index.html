@@ -760,22 +760,19 @@ if (!user || !user.access_token || !user.refresh_token) {
 async function openSupplierModal(index) {
   currentCustomerIndex = index;
   const customer = customers[index];
-  document.getElementById('currentCustomerName').textContent = customer.name;
- // ✅ 打印检查
-  console.log('当前客户:', customer);
-  console.log('customer.id 类型:', typeof customer.id, '值:', customer.id);
-    if (!customer.id) {
-    alert('当前客户 ID 不存在，无法加载供应商！');
-    return;
-  }
+  console.log('当前客户 ID', customer.id);
 
- 
+  document.getElementById('currentCustomerName').textContent = customer.name;
+
   const { data: suppliers, error } = await supabaseClient
     .from('suppliers')
-    .select('*')
+    .select('id, name, customer_id, is_delivered') // ✅ 不带引号
     .eq('customer_id', customer.id);
 
-  if (error) return alert('加载失败：' + error.message);
+  if (error) {
+    console.error('加载供应商失败', error);
+    return alert('加载失败：' + error.message);
+  }
 
   const supplierList = document.getElementById('supplierList');
   supplierList.innerHTML = '';
