@@ -494,786 +494,401 @@ h1 {
         </div>
     </div>
     <script>
-        console.log("尝试读取 localStorage.loggedInUser：", localStorage.getItem("loggedInUser"));
+    // 初始化Supabase客户端
+    const supabaseClient = supabase.createClient(
+        'https://mdgczfpcturvgtxjzrfc.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'
+    );
 
-       let currentEditId = null;  // 定义当前编辑客户的ID
-         // ✅ 初始化 supabaseClient（必须放最前面）
-const supabaseClient = supabase.createClient(
-    'https://mdgczfpcturvgtxjzrfc.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'
-);
+    // 全局变量
+    let currentUser = null;
+    let customers = [];
+    let currentEditId = null;
 
-// ✅ 用户校验和 token 设置
-const user = JSON.parse(localStorage.getItem("loggedInUser"));
-if (!user || !user.access_token) {
-    console.warn("本地用户信息缺少 token，跳转回 login.html");
-    window.location.href = "login.html";
-} else {
-    supabaseClient.auth.setSession({
-        access_token: user.access_token,
-        refresh_token: user.refresh_token
-    }).then(({ error }) => {
-        if (error) {
-            console.error("会话同步失败", error);
-            window.location.href = "login.html";
-        } else {
-            console.log("Supabase 会话已同步");
-            document.getElementById("userAvatar").src = user.avatar;
-            document.getElementById("userName").textContent = `欢迎您！${user.name}`;
-        }
-    });
-}
-
-// 确保 Supabase SDK 正确加载并初始化
-if (!supabaseClient) {
-    console.error('Supabase SDK未正确加载');
-} 
-
-// 加载数据
-async function loadData() {
-    const { data, error } = await supabaseClient.from('customers').select('*').order('id');
-    if (error) {
-        console.error('加载数据失败：', error);
-    } else {
-        renderTable(data);
-    }
-}
-
-function saveToLocalStorage() {
-    // 将 customers 数组转化为 JSON 字符串并存储到 localStorage
-    localStorage.setItem('customers', JSON.stringify(customers));
-}
-
-   
-
-
-
-        
-
-       
-        // 初始化音效：首次点击触发音频权限
-        document.addEventListener('click', () => {
-            const sound = document.getElementById('deleteSound');
-            sound.muted = true;
-            sound.play().then(() => {
-                sound.pause();
-                sound.muted = false;
-            });
-        }, { once: true });
-       // 删除客户的功能
-async function del(id) {
-    const { error } = await supabaseClient.from('customers').delete().eq('id', id);
-    if (!error) {
-        document.getElementById('deleteSound').play(); // 播放删除声音
-        loadData(); // 刷新数据
-    } else {
-        alert('删除失败：' + error.message);
-    }
-}
-
-// 加载数据并渲染表格
-async function loadData() {
-    const { data, error } = await supabaseClient.from('customers').select('*').order('id');
-    if (error) {
-        return alert('加载失败：' + error.message);
-    }
-
-    // 渲染客户数据
-    renderTable(data);
-}
-
-// 渲染客户数据到表格
-function renderTable(customers) {
-    const tbody = document.getElementById('customerTableBody');
-    tbody.innerHTML = '';  // 清空表格
-
-    customers.forEach((cust, index) => {
-        const tr = document.createElement('tr');
-
-        const tdName = document.createElement('td');
-        tdName.textContent = cust.name;
-        tr.appendChild(tdName);
-
-        const tdPhone = document.createElement('td');
-        tdPhone.textContent = cust.phone;
-        tr.appendChild(tdPhone);
-
-        const tdAddress = document.createElement('td');
-        tdAddress.textContent = cust.address;
-        tr.appendChild(tdAddress);
-
-        // 添加删除按钮
-        const tdActions = document.createElement('td');
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = '删除';
-        deleteBtn.classList.add('btn-delete');
-        deleteBtn.onclick = () => deleteCustomer(index);  // 绑定点击事件
-        tdActions.appendChild(deleteBtn);
-        tr.appendChild(tdActions);
-
-        tbody.appendChild(tr);
-    });
-}
-
+    // DOM加载完成后初始化
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initializeSession();
         loadData();
+        setupEventListeners();
+        setupRealtimeUpdates();
+    });
 
-        let customers = [];
-        // 当前编辑的客户索引（null表示新增）
-        let currentEditIndex = null;
-        let currentCustomerIndex = null; // 新增当前客户索引
+    // ===================== 核心功能函数 =====================
+    // 初始化用户会话
+    async function initializeSession() {
+        const localUser = JSON.parse(localStorage.getItem("loggedInUser"));
+        if (!localUser?.access_token) {
+            window.location.href = "login.html";
+            return;
+        }
 
-        async function loadData() {
+        const { data, error } = await supabaseClient.auth.setSession({
+            access_token: localUser.access_token,
+            refresh_token: localUser.refresh_token
+        });
+
+        if (error) {
+            console.error("会话错误:", error);
+            window.location.href = "login.html";
+            return;
+        }
+
+        currentUser = data.user;
+        document.getElementById("userAvatar").src = localUser.avatar;
+        document.getElementById("userName").textContent = `欢迎您！${localUser.name}`;
+    }
+
+    // 加载数据
+    async function loadData() {
+        try {
             const { data, error } = await supabaseClient
                 .from('customers')
                 .select('*')
+                .eq('user_id', currentUser.id)
                 .order('created_at', { ascending: false });
 
-            if (error) return alert('加载失败：' + error.message);
+            if (error) throw error;
+            
             customers = data;
-            renderTable(customers);
+            renderTable(data);
+            updateTotalAmount(data);
+        } catch (error) {
+            handleError("数据加载失败", error);
         }
+    }
 
-        async function saveCustomer(customer) {
-            const localUser = JSON.parse(localStorage.getItem("loggedInUser"));
-            if (!localUser || !localUser.id) {
-                alert("未获取到当前用户信息，请重新登录");
-                return { error: { message: "缺少用户信息" } };
+    // 渲染表格
+    function renderTable(data) {
+        const tbody = document.getElementById('customerTableBody');
+        tbody.innerHTML = data.map((cust, index) => `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${cust.name}</td>
+                <td>${cust.phone}</td>
+                <td>${cust.address}</td>
+                <td>${cust.amount}</td>
+                <td>${cust.customer_service}</td>
+                <td>${cust.note || ''}</td>
+                <td>${formatDate(cust.delivery_time)}</td>
+                <td>
+                    <button class="btn-edit" data-id="${cust.id}">编辑</button>
+                    <button class="btn-delete" data-id="${cust.id}">删除</button>
+                </td>
+                <td>${cust.order_count || 0}</td>
+            </tr>
+        `).join('');
+    }
+
+    // 事件监听设置
+    function setupEventListeners() {
+        // 添加/更新客户
+        document.getElementById('addCustomerBtn').addEventListener('click', handleCustomerSubmit);
+
+        // 删除操作（事件委托）
+        document.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('btn-delete')) {
+                if (confirm("确认删除此客户？")) {
+                    await deleteCustomer(e.target.dataset.id);
+                }
             }
 
-            customer.user_id = localUser.id;
+            if (e.target.classList.contains('btn-edit')) {
+                loadCustomerToForm(e.target.dataset.id);
+            }
+        });
 
-            if (customer.id) {
+        // 筛选功能
+        document.getElementById('filterBtn').addEventListener('click', applyFilters);
+        document.getElementById('clearFilterBtn').addEventListener('click', clearFilters);
+
+        // 粘贴识别
+        document.getElementById('pasteAddBtn').addEventListener('click', handlePaste);
+
+        // 主题切换
+        document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+    }
+
+    // 处理客户提交
+    async function handleCustomerSubmit() {
+        const customerData = {
+            name: document.getElementById('name').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            address: document.getElementById('address').value.trim(),
+            amount: Number(document.getElementById('amount').value),
+            customer_service: document.getElementById('customerService').value,
+            note: document.getElementById('note').value.trim(),
+            delivery_time: document.getElementById('deliveryTime').value,
+            user_id: currentUser.id
+        };
+
+        try {
+            if (currentEditId) {
+                // 更新操作
                 const { error } = await supabaseClient
                     .from('customers')
-                    .update(customer)
-                    .eq('id', customer.id);
-                return { error };
+                    .update(customerData)
+                    .eq('id', currentEditId);
+                
+                if (error) throw error;
+                currentEditId = null;
             } else {
-                const safeCustomer = {};
-                for (const key in customer) {
-                    const val = customer[key];
-                    if (
-                        val === undefined ||
-                        (typeof val === 'object' && val !== null && Object.keys(val).length === 0)
-                    ) {
-                        safeCustomer[key] = null;
-                    } else {
-                        safeCustomer[key] = val;
-                    }
-                }
-
-                const { data, error } = await supabaseClient
+                // 新增操作
+                const { error } = await supabaseClient
                     .from('customers')
-                    .insert([safeCustomer])
-                    .select();
-                return { data: data?.[0], error };
+                    .insert([customerData]);
+                
+                if (error) throw error;
             }
+
+            clearForm();
+            await loadData();
+        } catch (error) {
+            handleError("操作失败", error);
         }
-
-
-
-
-
-        // 渲染客户表格，dataArray为当前显示的数据
-        function renderTable(dataArray) {
-            const tbody = document.getElementById('customerTableBody');
-            tbody.innerHTML = '';
-
-            dataArray.forEach((cust, index) => {
-                const tr = document.createElement('tr');
-
-
-                const tdIndex = document.createElement('td');
-                tdIndex.textContent = index + 1;
-                tr.appendChild(tdIndex);
-
-                const tdName = document.createElement('td');
-                tdName.textContent = cust.name;
-                tr.appendChild(tdName);
-
-                const tdPhone = document.createElement('td');
-                tdPhone.textContent = cust.phone;
-                tr.appendChild(tdPhone);
-
-                const tdAddress = document.createElement('td');
-                tdAddress.textContent = cust.address;
-                tr.appendChild(tdAddress);
-
-                const tdAmount = document.createElement('td');
-                tdAmount.textContent = cust.amount;
-                tr.appendChild(tdAmount);
-
-                const tdCustomerService = document.createElement('td');
-                tdCustomerService.textContent = cust.customerService || '';
-                tr.appendChild(tdCustomerService);
-
-                const tdNote = document.createElement('td');
-                tdNote.textContent = cust.note || '';
-                tr.appendChild(tdNote);
-
-              // 日期单元格
-              function formatDate(dateStr) {
-              if (!dateStr) return '';
-              const date = new Date(dateStr);
-              return isNaN(date) ? '' : date.toISOString().split('T')[0];
-            }
-            const tdDelivery = document.createElement('td');
-            tdDelivery.textContent = formatDate(cust.deliveryTime);
-            tr.appendChild(tdDelivery);
-
-
-            // 更新合计金额（基于当前显示的数据）
-            const total = dataArray.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
-            document.getElementById('totalAmount').textContent = '合计金额：' + total;
-        });
-
-        // 新增供货商管理功能
-        async function openSupplierModal(index) {
-    currentCustomerIndex = index;
-    const customer = customers[index];
-
-    // 查询该客户的所有供应商
-    const { data: suppliers, error } = await supabaseClient
-        .from('suppliers')
-        .select('*')
-        .eq('customer_id', customer.id);
-
-    if (error) {
-        alert('加载供应商失败：' + error.message);
-        return;
     }
 
-    // 渲染供应商列表
-    const supplierList = document.getElementById('supplierList');
-    supplierList.innerHTML = suppliers.length
-        ? suppliers.map((s, i) => `
-            <div class="supplier-item">
-                <input type="checkbox" onchange="toggleSupplier(this, '${s.id}')">
-                <span>${s.name}</span>
-                <div class="supplier-actions">
-                    <button onclick="editSupplier('${s.id}', '${s.name}')" class="btn-edit">修改</button>
-                    <button onclick="deleteSupplier('${s.id}')" class="btn-delete">删除</button>
-                </div>
-            </div>
-        `).join('')
-        : '<div>暂无供货商</div>';
+    // 删除客户
+    async function deleteCustomer(id) {
+        try {
+            const { error } = await supabaseClient
+                .from('customers')
+                .delete()
+                .eq('id', id);
 
-    // ✅ 显示弹窗
-    document.getElementById('supplierModal').style.display = 'flex';
-
-    // ✅ 添加键盘事件（防止重复绑定，先移除再绑定）
-    const input = document.getElementById('newSupplierName');
-    const newInputClone = input.cloneNode(true); // 创建副本
-    input.parentNode.replaceChild(newInputClone, input); // 替换原有节点
-    newInputClone.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') {
-            addSupplier();
+            if (error) throw error;
+            
+            document.getElementById('deleteSound').play();
+            await loadData();
+        } catch (error) {
+            handleError("删除失败", error);
         }
-    });
-}
+    }
 
+    // ===================== 辅助函数 =====================
+    // 日期格式化
+    function formatDate(dateString) {
+        return dateString ? new Date(dateString).toLocaleDateString('zh-CN') : '';
+    }
 
-        
-        
+    // 清空表单
+    function clearForm() {
+        document.getElementById('name').value = '';
+        document.getElementById('phone').value = '';
+        document.getElementById('address').value = '';
+        document.getElementById('amount').value = '';
+        document.getElementById('customerService').value = '';
+        document.getElementById('note').value = '';
+        document.getElementById('deliveryTime').value = '';
+        currentEditId = null;
+        document.getElementById('addCustomerBtn').textContent = '添加';
+    }
 
-        function closeSupplierModal() {
-            document.getElementById('supplierModal').style.display = 'none';
+    // 更新总金额
+    function updateTotalAmount(data) {
+        const total = data.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+        document.getElementById('totalAmount').textContent = `合计金额：${total.toFixed(2)}`;
+    }
+
+    // 错误处理
+    function handleError(context, error) {
+        console.error(`${context}:`, error);
+        alert(`${context}: ${error.message}`);
+    }
+
+    // 加载客户到表单
+    async function loadCustomerToForm(id) {
+        try {
+            const { data, error } = await supabaseClient
+                .from('customers')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (error) throw error;
+
+            currentEditId = id;
+            document.getElementById('name').value = data.name;
+            document.getElementById('phone').value = data.phone;
+            document.getElementById('address').value = data.address;
+            document.getElementById('amount').value = data.amount;
+            document.getElementById('customerService').value = data.customer_service;
+            document.getElementById('note').value = data.note;
+            document.getElementById('deliveryTime').value = data.delivery_time.split('T')[0];
+            document.getElementById('addCustomerBtn').textContent = '更新';
+        } catch (error) {
+            handleError("加载失败", error);
         }
-
-        async function addSupplier() {
-    const name = document.getElementById('newSupplierName').value.trim();
-    if (!name) return alert('请输入供应商名称');
-
-    const customer = customers[currentCustomerIndex];
-
-    const { error } = await supabaseClient
-        .from('suppliers')
-        .insert([{
-            name,
-            customer_id: customer.id,
-            user_id: user.id  // 记得在全局设置 `const user = ...`
-        }]);
-
-    if (error) {
-        alert('添加失败：' + error.message);
-    } else {
-        openSupplierModal(currentCustomerIndex); // 重新加载列表
-        document.getElementById('newSupplierName').value = '';
-    }
-}
-
-    
-    // 在当前客户中添加新的供应商
-    
-
-    // 保存到 Supabase
-   document.getElementById('addSupplierBtn').addEventListener('click', async () => {
-    const newSupplierName = document.getElementById('newSupplierName').value.trim();
-    const customer = customers[currentCustomerIndex];
-
-    const { error } = await supabaseClient
-        .from('suppliers')
-        .insert([{ name: newSupplierName, customer_id: customer.id }]);
-
-    if (error) {
-        alert('保存失败：' + error.message);
-    }
-});
-
-
-      async function deleteSupplier(supplierId) {
-    const { error } = await supabaseClient
-        .from('suppliers')
-        .delete()
-        .eq('id', supplierId);
-
-    if (error) {
-        alert('删除失败：' + error.message);
-    } else {
-        openSupplierModal(currentCustomerIndex); // 重新加载列表
-    }
-}
-
-
-        async function editSupplier(supplierId, oldName) {
-    const newName = prompt('请输入新的名称：', oldName);
-    if (!newName || newName === oldName) return;
-
-    const { error } = await supabaseClient
-        .from('suppliers')
-        .update({ name: newName })
-        .eq('id', supplierId);
-
-    if (error) {
-        alert('更新失败：' + error.message);
-    } else {
-        openSupplierModal(currentCustomerIndex);
-    }
-}
-
-
-
-        async function toggleSupplier(checkbox, supplierName) {
-    const customer = customers[currentCustomerIndex];
-
-    // 如果供货商被选中，则将其添加到 selectedSuppliers 中，否则移除
-    if (checkbox.checked) {
-        if (!customer.selectedSuppliers) customer.selectedSuppliers = [];
-        customer.selectedSuppliers.push(supplierName);
-    } else {
-        customer.selectedSuppliers = customer.selectedSuppliers.filter(supplier => supplier !== supplierName);
     }
 
-    // 更新到 Supabase
-    const { error } = await supabaseClient
-        .from('customers')
-        .update({ selectedSuppliers: customer.selectedSuppliers })
-        .eq('id', customer.id);
-
-    if (error) {
-        alert('更新供货商状态失败：' + error.message);
-    } else {
-        alert('供货商状态更新成功！');
-    }
-}
-
-        
-
-
-        
-
-
-        // 将选中的客户加载到表单上进行编辑
-        function loadCustomerToForm(index) {
-    const cust = customers[index];
-    currentEditIndex = index;
-
-    document.getElementById('name').value = cust.name || '';
-    document.getElementById('phone').value = cust.phone || '';
-    document.getElementById('address').value = cust.address || '';
-    document.getElementById('amount').value = cust.amount || '';
-    document.getElementById('customerService').value = cust.customerService || '';
-    document.getElementById('note').value = cust.note || '';
-    
-    // 日期格式化后再赋值，防止出现 invalid 格式或 undefined
-    document.getElementById('deliveryTime').value = cust.deliveryTime ? formatDate(cust.deliveryTime) : '';
-
-    // 将添加按钮文本改为“更新”
-    document.getElementById('addCustomerBtn').textContent = '更新';
-}
-
-        // 手动添加或更新客户信息
-document.getElementById('addCustomerBtn').addEventListener('click', async () => {
-    
-      // 获取表单字段值
-    const name = document.getElementById('name').value;
-    const phone = document.getElementById('phone').value;
-    const address = document.getElementById('address').value;
-    const amount = document.getElementById('amount').value;
-    const customerService = document.getElementById('customerService').value;
-    const note = document.getElementById('note').value;
-    const deliveryTime = document.getElementById('deliveryTime').value;
-    // 使用驼峰命名获取表单值
-    const customerData = {
-        name,
-        phone,
-        address,
-        amount: parseFloat(amount),
-        customerService,  // 前端使用驼峰命名
-        note,
-        deliveryTime  // 前端使用驼峰命名
-    };
-
-    // 将字段转换为数据库使用的蛇形命名
-    const dataToSave = {
-        name,
-        phone,
-        address,
-        amount: parseFloat(amount),
-        customer_service: customerService,  // 转换为蛇形命名
-        note,
-        delivery_time: deliveryTime  // 转换为蛇形命名
-    };
-    console.log("name:", name);
-    console.log("phone:", phone);
-    console.log("address:", address);
-    console.log("amount:", amount);
-    console.log("customerService:", customerService);
-    console.log("note:", note);
-    console.log("deliveryTime:", deliveryTime);
-    console.log("Constructed customerData:", customerData);
-    // 如果当前有编辑 ID，更新该客户
-    if (currentEditId) {
-        dataToSave.id = currentEditId;
-    }
-
-    // 保存到数据库
-    const { error } = await saveCustomer(dataToSave);  // 保存数据到 Supabase
-
-    if (!error) {
-        loadData();  // 加载最新数据
-        clearForm();  // 清空表单
-    } else {
-        alert('操作失败：' + error.message);  // 出错时提示
-    }
-});
-
-        // 清空手动添加区表单
-        function clearForm() {
-            document.getElementById('name').value = '';
-            document.getElementById('phone').value = '';
-            document.getElementById('address').value = '';
-            document.getElementById('amount').value = '';
-            document.getElementById('customerService').value = '';
-            document.getElementById('note').value = '';
-            document.getElementById('deliveryTime').value = '';
-        }
-
-        // 删除单个客户信息
-        async function deleteCustomer(index) {
-    const custId = customers[index].id;  // 获取要删除的客户 ID
-
-    const { error } = await supabaseClient
-        .from('customers')  // 正确调用 from('customers')
-        .delete()
-        .eq('id', custId); // 使用 ID 删除
-
-    if (error) {
-        alert('删除失败：' + error.message);
-    } else {
-        document.getElementById('deleteSound').play();  // 播放删除声音
-        loadData();  // 刷新数据
-    }
-}
-
-        // 一键删除所有客户信息
-        document.getElementById('deleteAllBtn').addEventListener('click', () => {
-            if (confirm('确定删除所有客户信息？此操作不可恢复！')) {
-                customers = [];
-                saveToLocalStorage();
-                renderTable(customers);
-            }
-        });
-
-        // 搜索和时间筛选功能
-        const searchName = document.getElementById('searchName');
-        const startDate = document.getElementById('startDate');
-        const endDate = document.getElementById('endDate');
-        const filterBtn = document.getElementById('filterBtn');
-        const clearFilterBtn = document.getElementById('clearFilterBtn');
-
-        // 点击筛选按钮
-        filterBtn.addEventListener('click', () => {
-            let filtered = [...customers];
-
-            // 按姓名搜索
-            const nameKeyword = searchName.value.trim();
-            if (nameKeyword) {
-                filtered = filtered.filter(cust => cust.name.includes(nameKeyword));
-            }
-
-            // 按时间区间筛选
-            const start = startDate.value;
-            const end = endDate.value;
-            if (start) {
-                filtered = filtered.filter(cust => cust.deliveryTime && cust.deliveryTime >= start);
-            }
-            if (end) {
-                filtered = filtered.filter(cust => cust.deliveryTime && cust.deliveryTime <= end);
-            }
-
-            renderTable(filtered);
-        });
-
-        // 清除筛选条件
-        clearFilterBtn.addEventListener('click', () => {
-            searchName.value = '';
-            startDate.value = '';
-            endDate.value = '';
-            renderTable(customers);
-        });
-
-        // 粘贴识别添加（无固定格式）——增加对多行记录的整合处理
-        document.getElementById('pasteAddBtn').addEventListener('click', () => {
-            const pasteText = document.getElementById('pasteInput').value.trim();
-            if (!pasteText) {
-                alert('请先粘贴内容！');
-                return;
-            }
-
-            // 如果文本中没有空行（即没有连续换行），认为所有行属于同一条记录，合并为一行
-            const records = pasteText.match(/\r?\n\s*\r?\n/) ? pasteText.split(/\r?\n\s*\r?\n/) : [pasteText.replace(/\r?\n/g, ' ')];
-
-            let addedCount = 0;
-            records.forEach(record => {
-                const customer = {
-                    name: '',
-                    phone: '',
-                    address: '',
-                    amount: 0,
-                    customerService: '',
-                    note: '',
-                    deliveryTime: ''
-                };
-
-                // 提取客服信息（匹配“客服:”或“客服：”后面的内容）
-                const csMatch = record.match(/客服[:：]\s*([\u4e00-\u9fa5A-Za-z0-9]+)/);
-                if (csMatch) {
-                    customer.customerService = csMatch[1];
-                }
-
-                // 提取客户姓名（匹配“客户:”或“客户姓名:”后面的内容）
-                const nameMatch = record.match(/客户(?:姓名)?[:：]\s*([\u4e00-\u9fa5]+)/);
-                if (nameMatch) {
-                    customer.name = nameMatch[1];
-                } else {
-                    // 如果没有“客户姓名：”，尝试提取行首2-4个汉字
-                    const fallbackName = record.match(/^[\u4e00-\u9fa5]{2,4}/);
-                    if (fallbackName) {
-                        customer.name = fallbackName[0];
-                    }
-                }
-
-                // 提取电话（11位数字，1开头），如果没有，则设置为“未填写”
-                const phoneMatch = record.match(/(1[3-9]\d{9})/);
-                customer.phone = phoneMatch ? phoneMatch[0] : '未填写';
-
-                // 提取地址（匹配“地址:”后面的内容，简单匹配包含省、市、区或县）
-                const addressMatch = record.match(/地址[:：]\s*([\u4e00-\u9fa5\s\d\-—#号]+)/);
-                if (addressMatch) {
-                    customer.address = addressMatch[1].trim();
-                }
-
-                // 提取金额（匹配“首批:”后面的金额信息，如“30000+赠送7800=37800”）
-                const amountMatch = record.match(/首批[:：]\s*(\d+(?:\+\S+)?)/);
-                if (amountMatch) {
-                    // 如果记录中存在“=”，优先取“=”后面的总金额
-                    const equalIndex = record.indexOf('=');
-                    if (equalIndex !== -1) {
-                        const afterEqual = record.slice(equalIndex + 1).trim();
-                        customer.amount = parseFloat(afterEqual) || parseFloat(amountMatch[1]);
-                    } else {
-                        customer.amount = parseFloat(amountMatch[1]);
-                    }
-                } else {
-                    // 如果没有“首批：”字段，尝试匹配任意数字作为金额
-                    const anyAmt = record.match(/[￥¥$]?\s*(\d+(?:\.\d{1, 2})?)/);
-                    if (anyAmt) {
-                        customer.amount = parseFloat(anyAmt[1]);
-                    }
-                }
-
-                // 提取交付时间（匹配日期格式，如2025-04-01、2025/04/01、2025.04.01）
-                const dateMatch = record.match(/(\d{4}[-\/.]\d{1, 2}[-\/.]\d{1, 2})/);
-                if (dateMatch) {
-                    customer.deliveryTime = dateMatch[1].replace(/[-\/.]/g, '-');
-                }
-
-                // 备注：将已识别字段从记录中剔除，其余部分作为备注
-                let note = record;
-                const fieldsToRemove = [customer.customerService, customer.name, customer.phone, customer.address, customer.amount.toString(), customer.deliveryTime];
-                fieldsToRemove.forEach(field => {
-                    if (field) note = note.replace(field, '');
-                });
-                customer.note = note.trim();
-
-                // 必填校验：客户姓名、地址、金额、客服信息必须存在
-                if (customer.name && customer.address && customer.amount && customer.customerService) {
-                    customers.push(customer);
-                    addedCount++;
-                }
-            });
-
-            if (addedCount > 0) {
-                saveToLocalStorage();
-                renderTable(customers);
-                document.getElementById('pasteInput').value = '';
-                alert(`成功添加 ${addedCount} 条客户信息！`);
-            } else {
-                alert('未能识别到有效的客户信息，请检查粘贴内容！');
-            }
-        });
-      
-
-
-// 换头像函数
-function changeAvatar() {
-    const user = JSON.parse(localStorage.getItem("loggedInUser"));
-    if (!user) {
-        alert("未获取到当前用户信息，请重新登录");
-        window.location.href = "login.html";  // 重定向到登录页面
-        return;
-    }
-
-    // 生成新的随机头像
-    const randomSeed = Date.now() + Math.random();
-    const newUrl = `https://i.pravatar.cc/150?u=${randomSeed}`;
-
-    // 更新头像并保存到 localStorage
-    user.avatar = newUrl;
-    localStorage.setItem("loggedInUser", JSON.stringify(user));
-    document.getElementById("userAvatar").src = newUrl;
-
-    // 播放头像更换音效
-    const avatarSound = document.getElementById('avatarSound');
-    if (avatarSound) {
-        avatarSound.currentTime = 0;
-        avatarSound.play().catch(err => {
-            console.warn("音效播放失败（可能被拦截）:", err);
-        });
-    }
-}
-
-
-        // 退出登录
-        function logout() {
-            localStorage.removeItem("loggedInUser");
-            window.location.href = "login.html";
-        }
-
-
-
-        //修改密码
-        function openChangePasswordModal() {
-            document.getElementById("passwordModal").style.display = "flex";
-        }
-        function openChangePasswordModal() {
-            document.getElementById("passwordModal").style.display = "flex";
-        }
-
-        function closePasswordModal() {
-            document.getElementById("passwordModal").style.display = "none";
-        }
-
-        function changePassword() {
-            const oldPass = document.getElementById("oldPassword").value;
-            const newPass = document.getElementById("newPassword").value;
-            const confirmPass = document.getElementById("confirmPassword").value;
-
-            let user = JSON.parse(localStorage.getItem("loggedInUser"));
-            let allUsers = JSON.parse(localStorage.getItem("allUsers") || "{ }");
-
-            if (!user || !allUsers[user.username]) {
-                alert("用户信息出错，请重新登录");
-                return;
-            }
-
-            if (allUsers[user.username].password !== oldPass) {
-                alert("旧密码不正确");
-                return;
-            }
-
-            if (newPass.length < 4) {
-                alert("新密码长度至少为 4 位");
-                return;
-            }
-
-            if (newPass !== confirmPass) {
-                alert("两次输入的新密码不一致");
-                return;
-            }
-
-            // 更新密码
-            allUsers[user.username].password = newPass;
-            localStorage.setItem("allUsers", JSON.stringify(allUsers));
-
-            window.location.href = 'password-changed.html';
-        }
-
-        const avatarSound = document.getElementById('avatarSound');
-
-        avatarSound.addEventListener('play', () => {
-            // 如果已有计时器，先清除
-            if (avatarSound._stopTimer) {
-                clearTimeout(avatarSound._stopTimer);
-            }
-
-            // 设置 1 秒后暂停并重置
-            avatarSound._stopTimer = setTimeout(() => {
-                avatarSound.pause();
-                avatarSound.currentTime = 0;
-                avatarSound._stopTimer = null;
-            }, 1000);
-        });
-
-        // 如果用户中途手动暂停，也清除计时器
-        avatarSound.addEventListener('pause', () => {
-            if (avatarSound._stopTimer) {
-                clearTimeout(avatarSound._stopTimer);
-                avatarSound._stopTimer = null;
-            }
-        });
-
-        const themeToggle = document.getElementById('theme-toggle');
-const body = document.body;
-
-themeToggle.addEventListener('click', () => {
-    // 切换 body 的主题
-    body.classList.toggle('dark-mode');
-    body.classList.toggle('light-mode');
-
-    // 切换按钮状态
-    themeToggle.classList.toggle('active');
-});
-
-// 初始状态设为白天模式
-body.classList.add('light-mode');
-
-
-
-
-        const channel = supabaseClient
-            .channel('customers')
+    // ===================== 实时更新 =====================
+    function setupRealtimeUpdates() {
+        supabaseClient
+            .channel('customers-channel')
             .on('postgres_changes', {
                 event: '*',
                 schema: 'public',
-                table: 'customers'
-            }, (payload) => {
-                loadData(); // 实时刷新数据
-            })
+                table: 'customers',
+                filter: `user_id=eq.${currentUser.id}`
+            }, () => loadData())
             .subscribe();
+    }
+
+    // ===================== 其他功能 =====================
+    // 主题切换
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        document.body.classList.toggle('light-mode');
+        document.getElementById('theme-toggle').classList.toggle('active');
+    }
+
+    // 筛选功能
+    async function applyFilters() {
+        const nameFilter = document.getElementById('searchName').value.trim();
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+
+        try {
+            let query = supabaseClient
+                .from('customers')
+                .select('*')
+                .eq('user_id', currentUser.id);
+
+            if (nameFilter) query = query.ilike('name', `%${nameFilter}%`);
+            if (startDate) query = query.gte('delivery_time', startDate);
+            if (endDate) query = query.lte('delivery_time', endDate);
+
+            const { data, error } = await query;
+            if (error) throw error;
+
+            renderTable(data);
+            updateTotalAmount(data);
+        } catch (error) {
+            handleError("筛选失败", error);
+        }
+    }
+
+    // 清除筛选
+    function clearFilters() {
+        document.getElementById('searchName').value = '';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        loadData();
+    }
+
+    // 粘贴处理
+    // 处理粘贴数据
+async function handlePaste() {
+    const pasteText = document.getElementById('pasteInput').value.trim();
+    if (!pasteText) {
+        alert('请先粘贴内容！');
+        return;
+    }
+
+    // 示例格式（按顺序解析）：
+    // 客户姓名,电话,地址,金额,客服,备注,日期(YYYY-MM-DD)
+    // 张三,13800138000,北京市海淀区,5000,李东华,重要客户,2023-12-31
+    
+    try {
+        const records = parsePasteData(pasteText);
+        if (records.length === 0) {
+            throw new Error("未识别到有效数据");
+        }
+
+        const { data, error } = await supabaseClient
+            .from('customers')
+            .insert(records)
+            .select();
+
+        if (error) throw error;
+
+        document.getElementById('pasteInput').value = '';
+        await loadData();
+        alert(`成功导入 ${data.length} 条记录`);
+    } catch (error) {
+        handleError("粘贴导入失败", error);
+    }
+}
+
+// 解析粘贴数据
+function parsePasteData(text) {
+    const lines = text.split('\n').filter(line => line.trim() !== '');
+    return lines.map(line => {
+        const [name, phone, address, amount, customerService, note, deliveryTime] = line.split(',').map(field => field.trim());
+        
+        // 必填字段验证
+        if (!name || !address || !amount || !customerService) {
+            throw new Error(`无效数据行: ${line}`);
+        }
+
+        return {
+            name,
+            phone: phone || '未填写',
+            address,
+            amount: Number(amount),
+            customer_service: customerService,
+            note: note || '',
+            delivery_time: deliveryTime || new Date().toISOString(),
+            user_id: currentUser.id
         };
-    </script>
+    });
+}
+
+    // 修改密码（需配合后端）
+    // 打开修改密码弹窗
+function openChangePasswordModal() {
+    document.getElementById("passwordModal").style.display = "flex";
+}
+
+// 关闭弹窗
+function closePasswordModal() {
+    document.getElementById("passwordModal").style.display = "none";
+}
+
+// 核心：修改密码逻辑
+async function changePassword() {
+    const oldPassword = document.getElementById("oldPassword").value;
+    const newPassword = document.getElementById("newPassword").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+
+    // 输入验证
+    if (newPassword !== confirmPassword) {
+        alert("新密码与确认密码不一致");
+        return;
+    }
+    if (newPassword.length < 6) {
+        alert("密码长度至少为6位");
+        return;
+    }
+
+    try {
+        // ✅ 关键：调用Supabase API更新密码
+        const { data, error } = await supabaseClient.auth.updateUser({
+            password: newPassword
+        });
+
+        if (error) throw error;
+
+        alert("密码修改成功！");
+        closePasswordModal();
+    } catch (error) {
+        handlePasswordError(error);
+    }
+}
+
+// 密码错误处理
+function handlePasswordError(error) {
+    switch (error.message) {
+        case 'New password should be different from the old password.':
+            alert("新密码不能与旧密码相同");
+            break;
+        case 'Password should be at least 6 characters.':
+            alert("密码长度至少6位");
+            break;
+        default:
+            alert(`密码修改失败: ${error.message}`);
+    }
+}
+</script>
 
 </body>
 
