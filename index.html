@@ -556,7 +556,44 @@ h1 {
     let currentUser = null;
     let customers = [];
     let currentEditId = null;
+     // ===================== 客户提交处理函数 =====================
+async function handleCustomerSubmit() {
+    const customerData = {
+        name: document.getElementById('name').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        amount: Number(document.getElementById('amount').value),
+        customer_service: document.getElementById('customerService').value,
+        note: document.getElementById('note').value.trim(),
+        delivery_time: document.getElementById('deliveryTime').value,
+        user_id: currentUser.id
+    };
 
+    try {
+        if (currentEditId) {
+            // 更新操作
+            const { error } = await supabaseClient
+                .from('customers')
+                .update(customerData)
+                .eq('id', currentEditId);
+            
+            if (error) throw error;
+            currentEditId = null;
+        } else {
+            // 新增操作
+            const { error } = await supabaseClient
+                .from('customers')
+                .insert([customerData]);
+            
+            if (error) throw error;
+        }
+
+        clearForm();
+        await loadData();
+    } catch (error) {
+        handleError("操作失败", error);
+    }
+}
         function setupEventListeners() {
     // 添加/更新客户按钮
     document.getElementById('addCustomerBtn').addEventListener('click', handleCustomerSubmit);
