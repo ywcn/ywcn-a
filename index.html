@@ -340,8 +340,8 @@ h1 {
 
 <body>
     <!-- 音效元素 -->
-    <audio id="avatarSound" src="./voice/董昱昆 - 微博提示音.ogg" preload="auto"></audio>
-    <audio id="deleteSound" src="./voice/阿茶暖暖 - 警报声-游戏提示音.ogg" preload="auto"></audio>
+    <audio id="avatarSound" src="voice/董昱昆 - 微博提示音.ogg" preload="auto"></audio>
+    <audio id="deleteSound" src="voice/阿茶暖暖 - 警报声-游戏提示音.ogg" preload="auto"></audio>
     <!-- 登录用户信息 + 按钮 -->
     <div class="user-bar">
         <div class="user-info">
@@ -512,11 +512,11 @@ h1 {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             
             // 加载删除音效
-            let response = await fetch('./voice/阿茶暖暖 - 警报声-游戏提示音.ogg');
+            let response = await fetch('voice/阿茶暖暖 - 警报声-游戏提示音.ogg');
             this.deleteBuffer = await this.loadAudioBuffer(response);
             
             // 加载头像音效
-            response = await fetch('./voice/董昱昆 - 微博提示音.ogg');
+            response = await fetch('voice/董昱昆 - 微博提示音.ogg');
             this.avatarBuffer = await this.loadAudioBuffer(response);
         },
 
