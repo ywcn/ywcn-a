@@ -757,7 +757,21 @@ function renderTable(customers) {
             </div>
         `).join('')
         : '<div>暂无供货商</div>';
+
+    // ✅ 显示弹窗
+    document.getElementById('supplierModal').style.display = 'flex';
+
+    // ✅ 添加键盘事件（防止重复绑定，先移除再绑定）
+    const input = document.getElementById('newSupplierName');
+    const newInputClone = input.cloneNode(true); // 创建副本
+    input.parentNode.replaceChild(newInputClone, input); // 替换原有节点
+    newInputClone.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            addSupplier();
+        }
+    });
 }
+
 
         
         //给newSupplierName输入框添加键盘事件
