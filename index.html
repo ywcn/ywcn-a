@@ -798,19 +798,18 @@ function renderTable(customers) {
     
 
     // 保存到 Supabase
+   document.getElementById('addSupplierBtn').addEventListener('click', async () => {
+    const newSupplierName = document.getElementById('newSupplierName').value.trim();
+    const customer = customers[currentCustomerIndex];
+
     const { error } = await supabaseClient
         .from('suppliers')
-        .insert([{ name: newSupplierName, customer_id: customer.id }]); // 假设有 customer_id 外键关联
+        .insert([{ name: newSupplierName, customer_id: customer.id }]);
 
     if (error) {
-        alert('保存供应商失败：' + error.message);
-    } else {
-        alert('供应商添加成功！');
-        loadData(); // 重新加载客户数据
+        alert('保存失败：' + error.message);
     }
-
-    document.getElementById('newSupplierName').value = ''; // 清空输入框
-}
+});
 
 
       async function deleteSupplier(supplierId) {
