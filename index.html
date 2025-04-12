@@ -520,7 +520,7 @@ h1 {
  document.body.style.display = "none"; // 防止页面瞬闪
 
 const user = JSON.parse(localStorage.getItem("loggedInUser"));
-console.log("🧾 当前登录用户信息：", user);
+
 
 if (!user || !user.access_token || !user.refresh_token) {
   alert("未登录或登录信息不完整，跳转 login.html");
@@ -761,7 +761,15 @@ async function openSupplierModal(index) {
   currentCustomerIndex = index;
   const customer = customers[index];
   document.getElementById('currentCustomerName').textContent = customer.name;
+ // ✅ 打印检查
+  console.log('当前客户:', customer);
+  console.log('customer.id 类型:', typeof customer.id, '值:', customer.id);
+    if (!customer.id) {
+    alert('当前客户 ID 不存在，无法加载供应商！');
+    return;
+  }
 
+ 
   const { data: suppliers, error } = await supabaseClient
     .from('suppliers')
     .select('*')
