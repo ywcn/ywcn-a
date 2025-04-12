@@ -552,6 +552,18 @@ h1 {
         }
     };
 
+        // ===================== 退出登录功能 =====================
+    function logout() {
+        // 1. 清除本地存储的用户信息
+        localStorage.removeItem("loggedInUser");
+        
+        // 2. 退出Supabase会话
+        supabaseClient.auth.signOut();
+        
+        // 3. 跳转到登录页
+        window.location.href = "login.html";
+    }
+        
     // ===================== 核心逻辑 =====================
     let currentUser = null;
     let customers = [];
