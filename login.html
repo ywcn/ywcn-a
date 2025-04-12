@@ -85,7 +85,7 @@
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'
         );
 
-        document.getElementById('login-btn').addEventListener('click', async (e) => {
+       document.getElementById('login-btn').addEventListener('click', async (e) => {
   e.preventDefault();
 
   const email = emailInput.value.trim();
@@ -99,21 +99,32 @@
 
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
-if (data?.session) {
+  if (error || !data || !data.session || !data.user) {
+    console.error("登录失败数据:", data);
+    errorDiv.textContent = "登录失败：" + (error?.message || "未返回 session");
+    return;
+  }
+
   const fullUserInfo = {
     id: data.user.id,
     email: data.user.email,
     name: data.user.user_metadata.name || "用户",
     avatar: data.user.user_metadata.avatar_url || `https://i.pravatar.cc/40?u=${data.user.email}`,
     access_token: data.session.access_token,
-    refresh_token: data.session.refresh_token // ✅ 关键字段
+    refresh_token: data.session.refresh_token
   };
+
+  console.log("登录成功，保存如下信息：", fullUserInfo);
+
+  if (!fullUserInfo.refresh_token) {
+    alert("refresh_token 未获取到，登录流程中断");
+    return;
+  }
 
   localStorage.setItem("loggedInUser", JSON.stringify(fullUserInfo));
   window.location.href = "index.html";
-}
-
 });
+
 
     </script>
 </body>
