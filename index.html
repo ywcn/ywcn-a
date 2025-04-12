@@ -725,7 +725,7 @@ function renderTable(customers) {
             // 更新合计金额（基于当前显示的数据）
             const total = dataArray.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
             document.getElementById('totalAmount').textContent = '合计金额：' + total;
-        
+        })；
 
         // 新增供货商管理功能
         async function openSupplierModal(index) {
@@ -1263,7 +1263,7 @@ body.classList.add('light-mode');
                 loadData(); // 实时刷新数据
             })
             .subscribe();
-
+        }；
     </script>
 
 </body>
