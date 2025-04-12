@@ -657,14 +657,21 @@ if (!user || !user.access_token || !user.refresh_token) {
   }
 
   document.getElementById("deleteAllBtn").addEventListener("click", async () => {
-    if (confirm("确定删除所有客户？")) {
-      const { error } = await supabaseClient.from("customers").delete().neq("id", 0);
-      if (!error) {
-        playDeleteSound();
-        loadData();
-      }
+  if (confirm("确定删除所有客户？")) {
+    const { error } = await supabaseClient
+      .from("customers")
+      .delete()
+      .not("id", "is", null); // ✅ 修改在这里
+
+    if (!error) {
+      playDeleteSound();
+      loadData();
+    } else {
+      alert("删除失败：" + error.message);
     }
-  });
+  }
+});
+
 
   document.getElementById("pasteAddBtn").addEventListener("click", async () => {
     const text = document.getElementById("pasteInput").value.trim();
