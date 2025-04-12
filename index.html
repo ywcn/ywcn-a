@@ -774,12 +774,7 @@ function renderTable(customers) {
 
 
         
-        //给newSupplierName输入框添加键盘事件
-        document.getElementById('newSupplierName').addEventListener('keydown', function (event) {
-            if (event.key === 'Enter') {
-                addSupplier();
-            }
-        });
+        
 
         function closeSupplierModal() {
             document.getElementById('supplierModal').style.display = 'none';
