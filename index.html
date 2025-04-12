@@ -335,6 +335,23 @@ h1 {
             padding: 3px 8px;
 
         }
+        .supplier-item {
+  display: inline-block;
+  margin: 5px;
+  padding: 10px 16px;
+  border-radius: 20px;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+.supplier-item.checked {
+  background-color: green;
+}
+.supplier-item.unchecked {
+  background-color: red;
+}
+
     </style>
 </head>
 
@@ -482,7 +499,7 @@ h1 {
             </button>
         </div>
 
-        <div id="supplierList"></div>
+        <div id="supplierList"  class="supplier-list"></div>
 
         <div class="modal-footer">
             <button onclick="saveSuppliers()">
@@ -561,7 +578,10 @@ if (!user || !user.access_token || !user.refresh_token) {
           <button class="btn-edit" onclick="loadCustomerToForm(${index})">编辑</button>
           <button class="btn-delete" onclick="deleteCustomer(${index})">删除</button>
         </td>
-        <td onclick="openSupplierModal(${index})">1</td>
+        <td class="order-count" data-customer-id="${customer.id}" onclick="openSupplierModal(${index})">
+  已回货${customer.delivered_count || 0} / 未回货${customer.not_delivered_count || 0}
+</td>
+
       `;
       total += parseFloat(cust.amount || 0);
       tbody.appendChild(tr);
@@ -738,31 +758,40 @@ if (!user || !user.access_token || !user.refresh_token) {
 
   // 📦 供应商管理
 async function openSupplierModal(index) {
-    currentCustomerIndex = index;
-    const customer = customers[index];
-    document.getElementById('currentCustomerName').textContent = customer.name;
+  currentCustomerIndex = index;
+  const customer = customers[index];
+  document.getElementById('currentCustomerName').textContent = customer.name;
 
-    // 获取与客户关联的供应商列表
-    const { data: suppliers, error } = await supabaseClient
-        .from('suppliers')
-        .select('*')
-        .eq('customer_id', customer.id);
-    if (error) return alert('加载失败：' + error.message);
+  const { data: suppliers, error } = await supabaseClient
+    .from('suppliers')
+    .select('*')
+    .eq('customer_id', customer.id);
 
-    const supplierList = document.getElementById('supplierList');
-    supplierList.innerHTML = suppliers.map(s => `
-        <div class="supplier-item" style="background-color:${s.is_delivered ? 'green' : 'red'}">
-            <input type="checkbox" data-sid="${s.id}" ${s.is_delivered ? 'checked' : ''}>
-            <span>${s.name}</span>
-            <div class="supplier-actions">
-                <button onclick="editSupplier('${s.id}', '${s.name}')">修改</button>
-                <button onclick="deleteSupplier('${s.id}')">删除</button>
-            </div>
-        </div>
-    `).join('');
+  if (error) return alert('加载失败：' + error.message);
 
-    document.getElementById('supplierModal').style.display = 'flex';
+  const supplierList = document.getElementById('supplierList');
+  supplierList.innerHTML = '';
+
+  suppliers.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'supplier-item ' + (s.is_delivered ? 'checked' : 'unchecked');
+    div.textContent = s.name;
+    div.dataset.id = s.id;
+    div.dataset.delivered = s.is_delivered;
+
+    div.onclick = () => {
+      const isChecked = div.classList.contains('checked');
+      div.classList.toggle('checked', !isChecked);
+      div.classList.toggle('unchecked', isChecked);
+      div.dataset.delivered = (!isChecked).toString();
+    };
+
+    supplierList.appendChild(div);
+  });
+
+  document.getElementById('supplierModal').style.display = 'flex';
 }
+
 
 // 关闭模态框
 function closeSupplierModal() {
@@ -795,32 +824,38 @@ async function deleteSupplier(id) {
 
 // 保存供应商的勾选状态
 async function saveSuppliers() {
-    const checkboxes = document.querySelectorAll('#supplierList input[type="checkbox"]');
-    const updatedSuppliers = Array.from(checkboxes).map(c => ({
-        id: c.getAttribute('data-sid'),
-        is_delivered: c.checked
-    }));
+  const supplierItems = document.querySelectorAll('.supplier-item');
+  let deliveredCount = 0;
 
-    const customer = customers[currentCustomerIndex];
-    // 更新供应商的回货状态
-    for (let supplier of updatedSuppliers) {
-        await supabaseClient.from('suppliers').update({ is_delivered: supplier.is_delivered }).eq('id', supplier.id);
-    }
+  for (let item of supplierItems) {
+    const id = item.dataset.id;
+    const isDelivered = item.dataset.delivered === 'true';
 
-    // 更新客户表中的已回货/未回货数量
-    const deliveredCount = updatedSuppliers.filter(s => s.is_delivered).length;
-    const notDeliveredCount = updatedSuppliers.length - deliveredCount;
+    if (isDelivered) deliveredCount++;
 
-    // 更新订单数显示
-    await supabaseClient.from('customers').update({
-        delivered_count: deliveredCount,
-        not_delivered_count: notDeliveredCount
-    }).eq('id', customer.id);
+    await supabaseClient.from('suppliers').update({
+      is_delivered: isDelivered
+    }).eq('id', id);
+  }
 
-    alert('已保存供应商状态');
-    closeSupplierModal();
-    loadData();  // 重新加载数据
+  const total = supplierItems.length;
+  const notDeliveredCount = total - deliveredCount;
+
+  // 更新客户的统计字段（可选）
+  const customer = customers[currentCustomerIndex];
+  await supabaseClient.from('customers').update({
+    delivered_count: deliveredCount,
+    not_delivered_count: notDeliveredCount
+  }).eq('id', customer.id);
+
+  // 页面同步更新
+  document.querySelector(`.order-count[data-customer-id="${customer.id}"]`).innerText =
+    `已回货${deliveredCount} / 未回货${notDeliveredCount}`;
+
+  alert('保存成功');
+  closeSupplierModal();
 }
+
 
 // 监听表格点击事件，打开供应商管理
 document.querySelectorAll('.order-count-cell').forEach(cell => {
