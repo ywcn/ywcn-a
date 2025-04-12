@@ -556,6 +556,138 @@ h1 {
             handleError("数据加载失败", error);
         }
     }
+        let audioContext;
+let source;
+//换头像音效事件
+async function playAvatarSound() {
+    try {
+        // 初始化音频上下文
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // 获取音频文件
+        const response = await fetch('./voice/董昱昆 - 微博提示音.ogg');
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        
+        // 创建播放节点
+        source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        
+        // 设置1秒后停止
+        source.start(0);
+        source.stop(audioContext.currentTime + 1); // 精确停止
+        
+    } catch (error) {
+        console.error("音效播放失败:", error);
+    }
+}
+
+// 更新头像点击事件
+function changeAvatar() {
+    // 1. 获取用户信息
+    const user = JSON.parse(localStorage.getItem("loggedInUser"));
+    if (!user) {
+        alert("未获取到当前用户信息，请重新登录");
+        window.location.href = "login.html";
+        return;
+    }
+
+    // 2. 生成随机头像
+    const randomSeed = Date.now() + Math.random();
+    const newUrl = `https://i.pravatar.cc/150?u=${randomSeed}`;
+
+    // 3. 更新本地存储和页面显示
+    user.avatar = newUrl;
+    localStorage.setItem("loggedInUser", JSON.stringify(user));
+    document.getElementById("userAvatar").src = newUrl;
+
+    // 4. 播放音效
+    playAvatarSound(); // 替换原有音效播放
+}
+   
+       // 全局变量存储音效定时器
+let deleteSoundTimer = null;
+
+// 删除所有信息的函数
+async function deleteAllCustomers() {
+    const sound = document.getElementById('deleteSound');
+    
+    try {
+        // 播放音效
+        sound.currentTime = 0;
+        await sound.play();
+        
+        // 设置2秒后停止
+        if (deleteSoundTimer) clearTimeout(deleteSoundTimer);
+        deleteSoundTimer = setTimeout(() => {
+            sound.pause();
+            sound.currentTime = 0;
+        }, 2000);
+
+        // 执行删除操作
+        const { error } = await supabaseClient
+            .from('customers')
+            .delete()
+            .eq('user_id', currentUser.id); // 删除当前用户所有数据
+
+        if (error) throw error;
+        
+        await loadData(); // 刷新数据
+        alert('所有信息已删除！');
+        
+    } catch (error) {
+        handleError("删除失败", error);
+        sound.pause();
+        sound.currentTime = 0;
+    }
+}
+
+// 绑定按钮事件
+document.getElementById('deleteAllBtn').addEventListener('click', () => {
+    if (confirm('确定删除所有客户信息？此操作不可恢复！')) {
+        deleteAllCustomers();
+    }
+}); 
+        // 公共音效控制函数
+async function playDeleteSound(duration = 2000) {
+    const sound = document.getElementById('deleteSound');
+    try {
+        sound.currentTime = 0;
+        await sound.play();
+        
+        if (window.deleteSoundTimer) clearTimeout(deleteSoundTimer);
+        deleteSoundTimer = setTimeout(() => {
+            sound.pause();
+            sound.currentTime = 0;
+        }, duration);
+        
+    } catch (error) {
+        console.error("音效播放失败:", error);
+    }
+}
+
+// 在删除函数中调用
+async function deleteCustomer(id) {
+    await playDeleteSound(); // 播放2秒音效
+    // ...删除单个客户的逻辑...
+}
+
+async function deleteAllCustomers() {
+    await playDeleteSound(); // 播放2秒音效
+    // ...删除所有客户的逻辑...
+}
+        // 防止多次点击导致音效重叠
+let isSoundPlaying = false;
+
+async function playDeleteSound() {
+    if (isSoundPlaying) return;
+    
+    isSoundPlaying = true;
+    // ...播放逻辑...
+    setTimeout(() => {
+        isSoundPlaying = false;
+    }, 2000);
+}
 
     // 渲染表格
     function renderTable(data) {
@@ -578,7 +710,7 @@ h1 {
             </tr>
         `).join('');
     }
-
+    
     // 事件监听设置
     function setupEventListeners() {
         // 添加/更新客户
@@ -646,23 +778,40 @@ h1 {
             handleError("操作失败", error);
         }
     }
+    let audioContext;
+let deleteSoundBuffer;
 
+// 预加载音频（页面初始化时调用）
+async function loadDeleteSound() {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const response = await fetch('./voice/阿茶暖暖 - 警报声-游戏提示音.ogg');
+    const arrayBuffer = await response.arrayBuffer();
+    deleteSoundBuffer = await audioContext.decodeAudioData(arrayBuffer);
+}
+
+// 精确播放控制
+function playDeleteSound() {
+    const source = audioContext.createBufferSource();
+    source.buffer = deleteSoundBuffer;
+    source.connect(audioContext.destination);
+    source.start(0);
+    source.stop(audioContext.currentTime + 2); // 精确2秒停止
+}
+
+
+
+// 页面加载时预加载音效
+document.addEventListener('DOMContentLoaded', loadDeleteSound);
     // 删除客户
-    async function deleteCustomer(id) {
-        try {
-            const { error } = await supabaseClient
-                .from('customers')
-                .delete()
-                .eq('id', id);
-
-            if (error) throw error;
-            
-            document.getElementById('deleteSound').play();
-            await loadData();
-        } catch (error) {
-            handleError("删除失败", error);
-        }
+    // 在删除函数中调用
+async function deleteCustomer(id) {
+    try {
+        playDeleteSound(); // 替换原有播放逻辑
+        // ...其他删除逻辑...
+    } catch (error) {
+        // ...错误处理...
     }
+}
 
     // ===================== 辅助函数 =====================
     // 日期格式化
