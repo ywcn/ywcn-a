@@ -399,8 +399,8 @@ h1 {
                     <input type="number" id="amount" placeholder="必填" />
                 </div>
                 <div class="form-group">
-                    <label for="customerService">客服：</label>
-                    <select name="customerService" id="customerService">
+                    <label for="customer_service">客服：</label>
+                    <select name="customer_service" id="customer_service">
                         <option value="李东华">李东华</option>
                         <option value="刘小兵">刘小兵</option>
                         <option value="贾国祥">贾国祥</option>
@@ -413,8 +413,8 @@ h1 {
                     <input type="text" id="note" placeholder="可选" />
                 </div>
                 <div class="form-group">
-                    <label for="deliveryTime">时间：</label>
-                    <input type="date" id="deliveryTime" />
+                    <label for="delivery_time">时间：</label>
+                    <input type="date" id="delivery_time" />
                 </div>
             </div>
 
@@ -553,9 +553,9 @@ if (!user || !user.access_token || !user.refresh_token) {
         <td><a href="tel:${cust.phone}">${cust.phone}</a></td>
         <td>${cust.address}</td>
         <td>${cust.amount}</td>
-        <td>${cust.customerService || ''}</td>
+        <td>${cust.customer_service || ''}</td>
         <td>${cust.note || ''}</td>
-        <td>${cust.deliveryTime?.split('T')[0] || ''}</td>
+        <td>${cust.delivery_time?.split('T')[0] || ''}</td>
         <td>
           <button class="btn-edit" onclick="loadCustomerToForm(${index})">编辑</button>
           <button class="btn-delete" onclick="deleteCustomer(${index})">删除</button>
@@ -579,9 +579,9 @@ if (!user || !user.access_token || !user.refresh_token) {
     document.getElementById("phone").value = cust.phone;
     document.getElementById("address").value = cust.address;
     document.getElementById("amount").value = cust.amount;
-    document.getElementById("customerService").value = cust.customerService;
+    document.getElementById("customer_service").value = cust.customer_service;
     document.getElementById("note").value = cust.note;
-    document.getElementById("deliveryTime").value = cust.deliveryTime?.split('T')[0] || '';
+    document.getElementById("delivery_time").value = cust.delivery_time?.split('T')[0] || '';
     document.getElementById("addCustomerBtn").textContent = "更新";
   }
 
@@ -590,9 +590,9 @@ if (!user || !user.access_token || !user.refresh_token) {
     document.getElementById("phone").value = '';
     document.getElementById("address").value = '';
     document.getElementById("amount").value = '';
-    document.getElementById("customerService").value = '';
+    document.getElementById("customer_service").value = '';
     document.getElementById("note").value = '';
-    document.getElementById("deliveryTime").value = '';
+    document.getElementById("delivery_time").value = '';
     document.getElementById("addCustomerBtn").textContent = "添加";
     currentEditId = null;
   }
@@ -612,9 +612,9 @@ if (!user || !user.access_token || !user.refresh_token) {
       phone: document.getElementById("phone").value.trim(),
       address: document.getElementById("address").value.trim(),
       amount: parseFloat(document.getElementById("amount").value.trim()) || 0,
-      customerService: document.getElementById("customerService").value.trim(),
+      customer_service: document.getElementById("customer_service").value.trim(),
       note: document.getElementById("note").value.trim(),
-      deliveryTime: document.getElementById("deliveryTime").value
+      delivery_time: document.getElementById("delivery_time").value
     };
 
     if (currentEditId) customer.id = currentEditId;
@@ -658,9 +658,9 @@ if (!user || !user.access_token || !user.refresh_token) {
       phone: "13800138000",
       address: "测试地址",
       amount: 100,
-      customerService: "客服A",
+      customer_service: "客服A",
       note: "系统添加",
-      deliveryTime: "2025-04-01"
+      delivery_time: "2025-04-01"
     };
 
     await saveCustomer(customer);
