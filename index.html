@@ -560,9 +560,8 @@ if (!user || !user.access_token || !user.refresh_token) {
         <td>
           <button class="btn-edit" onclick="loadCustomerToForm(${index})">编辑</button>
           <button class="btn-delete" onclick="deleteCustomer(${index})">删除</button>
-          <button onclick="openSupplierModal(${index})">供货商</button>
         </td>
-        <td>1</td>
+        <td onclick="openSupplierModal(${index})">1</td>
       `;
       total += parseFloat(cust.amount || 0);
       tbody.appendChild(tr);
