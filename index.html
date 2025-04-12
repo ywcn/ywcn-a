@@ -1059,7 +1059,7 @@ document.getElementById('addCustomerBtn').addEventListener('click', async () => 
                     customer.name = nameMatch[1];
                 } else {
                     // 如果没有“客户姓名：”，尝试提取行首2-4个汉字
-                    const fallbackName = record.match(/^[\u4e00-\u9fa5]{2, 4}/);
+                    const fallbackName = record.match(/^[\u4e00-\u9fa5]{2,4}/);
                     if (fallbackName) {
                         customer.name = fallbackName[0];
                     }
@@ -1263,7 +1263,7 @@ body.classList.add('light-mode');
                 loadData(); // 实时刷新数据
             })
             .subscribe();
-        }；
+        
     </script>
 
 </body>
