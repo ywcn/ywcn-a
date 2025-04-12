@@ -167,7 +167,7 @@ h1 {
             border: none;
         }
 
-        .btn-add {
+        .btn-add,#addSupplierBtn {
             background-color: #28a745;
             color: #fff;
             border: none;
@@ -476,7 +476,7 @@ h1 {
             <div class="supplier-controls">
                 <input type="text" id="newSupplierName" placeholder="输入供应商名称"
                     style="flex:1; padding:8px; border-radius:20px; border:1px solid #ddd;">
-                <button onclick="addSupplier()" class="btn-add"
+                <button onclick="addSupplier()" id="addSupplierBtn"
                     style="border-radius:20px;margin-left: 8px;width: 80px;height: 30px;">
                     <i class="fas fa-plus"></i> 添加
                 </button>
@@ -484,7 +484,7 @@ h1 {
 
             <div id="supplierList"></div>
             <div class="modal-footer">
-                <button onclick="saveSuppliers()" class="btn-add">
+                <button onclick="saveSuppliers()" id="addSupplierBtn">
                     <i class="fas fa-save"></i> 保存
                 </button>
                 <button onclick="closeSupplierModal()" class="btn-delete">
