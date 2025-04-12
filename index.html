@@ -499,10 +499,13 @@ h1 {
     'your-public-anon-key'
   );
 
- const user = JSON.parse(localStorage.getItem("loggedInUser"));
+ document.body.style.display = "none"; // 防止页面瞬闪
+
+const user = JSON.parse(localStorage.getItem("loggedInUser"));
+console.log("🧾 当前登录用户信息：", user);
 
 if (!user || !user.access_token || !user.refresh_token) {
-  console.warn("用户信息不完整，跳转登录页");
+  alert("未登录或登录信息不完整，跳转 login.html");
   window.location.href = "login.html";
 } else {
   supabaseClient.auth.setSession({
@@ -510,11 +513,14 @@ if (!user || !user.access_token || !user.refresh_token) {
     refresh_token: user.refresh_token
   }).then(({ error }) => {
     if (error) {
-      console.error("设置 session 失败：", error.message);
+      console.error("❌ Supabase setSession 失败：", error.message);
+      alert("token 设置失败：" + error.message);
       window.location.href = "login.html";
     } else {
+      console.log("✅ Supabase 会话恢复成功！");
       document.getElementById("userAvatar").src = user.avatar;
       document.getElementById("userName").textContent = `欢迎您！${user.name}`;
+      document.body.style.display = "block";
     }
   });
 }
