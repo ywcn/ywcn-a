@@ -99,26 +99,20 @@
 
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
-  if (error || !data.session) {
-    errorDiv.textContent = "登录失败：" + (error?.message || "未获取到会话信息");
-    return;
-  }
-
-  const { session, user } = data;
-
+if (data?.session) {
   const fullUserInfo = {
-    id: user.id,
-    email: user.email,
-    name: user.user_metadata.name || "用户",
-    avatar: user.user_metadata.avatar_url || `https://i.pravatar.cc/40?u=${user.email}`,
-    access_token: session.access_token,
-    refresh_token: session.refresh_token
+    id: data.user.id,
+    email: data.user.email,
+    name: data.user.user_metadata.name || "用户",
+    avatar: data.user.user_metadata.avatar_url || `https://i.pravatar.cc/40?u=${data.user.email}`,
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token // ✅ 关键字段
   };
 
   localStorage.setItem("loggedInUser", JSON.stringify(fullUserInfo));
-            console.log("登录成功，保存到 localStorage 的用户信息：", fullUserInfo);
-
   window.location.href = "index.html";
+}
+
 });
 
     </script>
