@@ -86,40 +86,39 @@
         );
 
         document.getElementById('login-btn').addEventListener('click', async (e) => {
-            e.preventDefault();
+  e.preventDefault();
 
-            const email = emailInput.value.trim();
-            const password = passwordInput.value;
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
+  errorDiv.textContent = "";
 
-            if (!email || !password) {
-                errorDiv.textContent = "邮箱和密码不能为空";
-                return;
-            }
+  if (!email || !password) {
+    errorDiv.textContent = "邮箱和密码不能为空";
+    return;
+  }
 
-            const { data: { session }, error } = await supabaseClient.auth.signInWithPassword({
-                email,
-                password
-            });
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
-            if (error) {
-                errorDiv.textContent = "登录失败：" + error.message;
-                return;
-            }
+  if (error || !data.session) {
+    errorDiv.textContent = "登录失败：" + (error?.message || "未获取到会话信息");
+    return;
+  }
 
-            const user = session.user;
+  const { session, user } = data;
 
-            const fullUserInfo = {
-                id: user.id,
-                email: user.email,
-                name: user.user_metadata.name || "用户",
-                avatar: user.user_metadata.avatar_url || `https://i.pravatar.cc/40?u=${user.email}`,
-                access_token: session.access_token,
-                refresh_token: session.refresh_token
-            };
+  const fullUserInfo = {
+    id: user.id,
+    email: user.email,
+    name: user.user_metadata.name || "用户",
+    avatar: user.user_metadata.avatar_url || `https://i.pravatar.cc/40?u=${user.email}`,
+    access_token: session.access_token,
+    refresh_token: session.refresh_token
+  };
 
-            localStorage.setItem("loggedInUser", JSON.stringify(fullUserInfo));
-            window.location.href = "index.html";
-        });
+  localStorage.setItem("loggedInUser", JSON.stringify(fullUserInfo));
+  window.location.href = "index.html";
+});
+
     </script>
 </body>
 
