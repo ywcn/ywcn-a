@@ -699,7 +699,14 @@ if (!user || !user.access_token || !user.refresh_token) {
     document.body.classList.add(saved + "-mode");
     themeToggle.classList.toggle("active", saved === "dark");
     loadData();
-  };
+  }; 
+ function openChangePasswordModal() {
+    document.getElementById("passwordModal").style.display = "flex";
+}
+
+function closePasswordModal() {
+    document.getElementById("passwordModal").style.display = "none";
+}
 
   async function changePassword() {
     const oldPass = document.getElementById("oldPassword").value;
@@ -724,6 +731,8 @@ if (!user || !user.access_token || !user.refresh_token) {
     localStorage.removeItem("loggedInUser");
     window.location.href = "login.html";
   }
+        
+
 
   // 🎵 换头像 + 音效
   function changeAvatar() {
@@ -777,7 +786,14 @@ async function openSupplierModal(index) {
   suppliers.forEach(s => {
     const div = document.createElement('div');
     div.className = 'supplier-item ' + (s.is_delivered ? 'checked' : 'unchecked');
-    div.textContent = s.name;
+    div.innerHTML = `
+  ${s.name}
+  <div class="supplier-actions">
+    <button onclick="editSupplier(${s.id}, '${s.name}')">✏️</button>
+    <button onclick="deleteSupplier(${s.id})">🗑️</button>
+  </div>
+`;
+
     div.dataset.id = s.id;
     div.dataset.delivered = s.is_delivered;
 
