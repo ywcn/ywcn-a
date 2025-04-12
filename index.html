@@ -470,29 +470,30 @@ h1 {
     </div>
 
     <!-- 新增供货商管理对话框 -->
-    <div id="supplierModal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <h3>供应商管理<span id="currentCustomerName"></span></h3>
-            <div class="supplier-controls">
-                <input type="text" id="newSupplierName" placeholder="输入供应商名称"
-                    style="flex:1; padding:8px; border-radius:20px; border:1px solid #ddd;">
-                <button onclick="addSupplier()" id="addSupplierBtn"
-                    style="border-radius:20px;margin-left: 8px;width: 80px;height: 30px;">
-                    <i class="fas fa-plus"></i> 添加
-                </button>
-            </div>
+<div id="supplierModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <h3>供应商管理 - <span id="currentCustomerName"></span></h3>
+        <div class="supplier-controls">
+            <input type="text" id="newSupplierName" placeholder="输入供应商名称"
+                style="flex:1; padding:8px; border-radius:20px; border:1px solid #ddd;">
+            <button onclick="addSupplier()" id="addSupplierBtn"
+                style="border-radius:20px;margin-left: 8px;width: 80px;height: 30px;">
+                <i class="fas fa-plus"></i> 添加
+            </button>
+        </div>
 
-            <div id="supplierList"></div>
-            <div class="modal-footer">
-                <button onclick="saveSuppliers()" id="addSupplierBtn">
-                    <i class="fas fa-save"></i> 保存
-                </button>
-                <button onclick="closeSupplierModal()" class="btn-delete">
-                    <i class="fas fa-times"></i> 关闭
-                </button>
-            </div>
+        <div id="supplierList"></div>
+
+        <div class="modal-footer">
+            <button onclick="saveSuppliers()">
+                <i class="fas fa-save"></i> 保存
+            </button>
+            <button onclick="closeSupplierModal()" class="btn-delete">
+                <i class="fas fa-times"></i> 关闭
+            </button>
         </div>
     </div>
+</div>
     <script>
   const supabaseClient = supabase.createClient(
     'https://mdgczfpcturvgtxjzrfc.supabase.co',
@@ -737,74 +738,98 @@ if (!user || !user.access_token || !user.refresh_token) {
   }
 
   // 📦 供应商管理
-  async function openSupplierModal(index) {
+async function openSupplierModal(index) {
     currentCustomerIndex = index;
     const customer = customers[index];
+    document.getElementById('currentCustomerName').textContent = customer.name;
+
+    // 获取与客户关联的供应商列表
     const { data: suppliers, error } = await supabaseClient
-      .from('suppliers')
-      .select('*')
-      .eq('customer_id', customer.id);
+        .from('suppliers')
+        .select('*')
+        .eq('customer_id', customer.id);
     if (error) return alert('加载失败：' + error.message);
 
     const supplierList = document.getElementById('supplierList');
     supplierList.innerHTML = suppliers.map(s => `
-      <div class="supplier-item">
-        <input type="checkbox" data-sid="${s.id}" ${customer.selectedSuppliers?.includes(s.id) ? 'checked' : ''}>
-        <span>${s.name}</span>
-        <div class="supplier-actions">
-          <button onclick="editSupplier('${s.id}', '${s.name}')">修改</button>
-          <button onclick="deleteSupplier('${s.id}')">删除</button>
+        <div class="supplier-item" style="background-color:${s.is_delivered ? 'green' : 'red'}">
+            <input type="checkbox" data-sid="${s.id}" ${s.is_delivered ? 'checked' : ''}>
+            <span>${s.name}</span>
+            <div class="supplier-actions">
+                <button onclick="editSupplier('${s.id}', '${s.name}')">修改</button>
+                <button onclick="deleteSupplier('${s.id}')">删除</button>
+            </div>
         </div>
-      </div>
     `).join('');
+
     document.getElementById('supplierModal').style.display = 'flex';
-  }
+}
 
-  function closeSupplierModal() {
+// 关闭模态框
+function closeSupplierModal() {
     document.getElementById('supplierModal').style.display = 'none';
-  }
+}
 
-  async function addSupplier() {
+// 添加新的供应商
+async function addSupplier() {
     const name = document.getElementById('newSupplierName').value.trim();
     if (!name) return alert('请输入供应商名称');
     const customer = customers[currentCustomerIndex];
-    await supabaseClient.from('suppliers').insert([{ name, customer_id: customer.id, user_id: user.id }]);
+    await supabaseClient.from('suppliers').insert([{ name, customer_id: customer.id, is_delivered: false }]);
     openSupplierModal(currentCustomerIndex);
     document.getElementById('newSupplierName').value = '';
-  }
+}
 
-  async function editSupplier(id, oldName) {
+// 编辑供应商
+async function editSupplier(id, oldName) {
     const newName = prompt('修改供应商名称', oldName);
     if (!newName || newName === oldName) return;
     await supabaseClient.from('suppliers').update({ name: newName }).eq('id', id);
     openSupplierModal(currentCustomerIndex);
-  }
+}
 
-  async function deleteSupplier(id) {
+// 删除供应商
+async function deleteSupplier(id) {
     await supabaseClient.from('suppliers').delete().eq('id', id);
     openSupplierModal(currentCustomerIndex);
-  }
+}
 
-  async function saveSuppliers() {
+// 保存供应商的勾选状态
+async function saveSuppliers() {
     const checkboxes = document.querySelectorAll('#supplierList input[type="checkbox"]');
-    const selectedIds = Array.from(checkboxes).filter(c => c.checked).map(c => c.getAttribute('data-sid'));
+    const updatedSuppliers = Array.from(checkboxes).map(c => ({
+        id: c.getAttribute('data-sid'),
+        is_delivered: c.checked
+    }));
+
     const customer = customers[currentCustomerIndex];
-    await supabaseClient.from('customers').update({ selectedSuppliers: selectedIds }).eq('id', customer.id);
-    alert('已保存供货商');
+    // 更新供应商的回货状态
+    for (let supplier of updatedSuppliers) {
+        await supabaseClient.from('suppliers').update({ is_delivered: supplier.is_delivered }).eq('id', supplier.id);
+    }
+
+    // 更新客户表中的已回货/未回货数量
+    const deliveredCount = updatedSuppliers.filter(s => s.is_delivered).length;
+    const notDeliveredCount = updatedSuppliers.length - deliveredCount;
+
+    // 更新订单数显示
+    await supabaseClient.from('customers').update({
+        delivered_count: deliveredCount,
+        not_delivered_count: notDeliveredCount
+    }).eq('id', customer.id);
+
+    alert('已保存供应商状态');
     closeSupplierModal();
-    loadData();
-  }
+    loadData();  // 重新加载数据
+}
 
-  document.getElementById('addSupplierBtn').onclick = addSupplier;
-
-  // 🔄 实时监听
-  supabaseClient.channel('customers')
-    .on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'customers'
-    }, () => loadData())
-    .subscribe();
+// 监听表格点击事件，打开供应商管理
+document.querySelectorAll('.order-count-cell').forEach(cell => {
+    cell.onclick = function () {
+        const index = cell.dataset.customerIndex;
+        openSupplierModal(index);
+    };
+});
 </script>
 
 </body>
