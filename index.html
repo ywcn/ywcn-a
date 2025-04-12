@@ -557,6 +557,38 @@ h1 {
     let customers = [];
     let currentEditId = null;
 
+        function setupEventListeners() {
+    // 添加/更新客户按钮
+    document.getElementById('addCustomerBtn').addEventListener('click', handleCustomerSubmit);
+
+    // 删除操作（事件委托）
+    document.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('btn-delete')) {
+            const id = e.target.dataset.id;
+            deleteOperation("确认删除此客户？", () => 
+                supabaseClient.from('customers').delete().eq('id', id)
+            );
+        }
+
+        if (e.target.classList.contains('btn-edit')) {
+            loadCustomerToForm(e.target.dataset.id);
+        }
+    });
+
+    // 筛选功能
+    document.getElementById('filterBtn').addEventListener('click', applyFilters);
+    document.getElementById('clearFilterBtn').addEventListener('click', clearFilters);
+
+    // 粘贴识别
+    document.getElementById('pasteAddBtn').addEventListener('click', handlePaste);
+
+    // 主题切换（直接内联逻辑）
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+        document.body.classList.toggle('dark-mode');
+        document.body.classList.toggle('light-mode');
+        document.getElementById('theme-toggle').classList.toggle('active');
+    });
+}
     // DOM加载初始化
     document.addEventListener('DOMContentLoaded', async () => {
         await SoundManager.init();
