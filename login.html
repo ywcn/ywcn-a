@@ -116,6 +116,8 @@
   };
 
   localStorage.setItem("loggedInUser", JSON.stringify(fullUserInfo));
+            console.log("登录成功，保存到 localStorage 的用户信息：", fullUserInfo);
+
   window.location.href = "index.html";
 });
 
