@@ -721,34 +721,6 @@ function renderTable(customers) {
             tdDelivery.textContent = formatDate(cust.deliveryTime);
             tr.appendChild(tdDelivery);
 
-               
-
-
-
-
-                // 操作：编辑、删除
-                const tdActions = document.createElement('td');
-                const editBtn = document.createElement('button');
-                editBtn.textContent = '修改';
-                editBtn.classList.add('btn-edit');
-                editBtn.onclick = () => loadCustomerToForm(index);
-                const deleteBtn = document.createElement('button');
-                deleteBtn.textContent = '删除';
-                deleteBtn.classList.add('btn-delete');
-                deleteBtn.onclick = () => deleteCustomer(index);
-                tdActions.appendChild(editBtn);
-                tdActions.appendChild(deleteBtn);
-                tr.appendChild(tdActions);
-                const tdSupplierStatus = document.createElement('td');
-                tdSupplierStatus.onclick = () => openSupplierModal(index); // 新增点击事件
-                tdSupplierStatus.textContent = cust.suppliers?.length > 0 ?
-                    `回货 ${cust.selectedSuppliers?.length || 0}/未回${cust.suppliers.length - cust.selectedSuppliers?.length || 0}` :
-                    '无供货商';
-                tr.appendChild(tdSupplierStatus);
-
-                tbody.appendChild(tr);
-            });
-
 
             // 更新合计金额（基于当前显示的数据）
             const total = dataArray.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
@@ -756,25 +728,37 @@ function renderTable(customers) {
         }
 
         // 新增供货商管理功能
-        function openSupplierModal(index) {
+        async function openSupplierModal(index) {
     currentCustomerIndex = index;
     const customer = customers[index];
+
+    // 查询该客户的所有供应商
+    const { data: suppliers, error } = await supabaseClient
+        .from('suppliers')
+        .select('*')
+        .eq('customer_id', customer.id);
+
+    if (error) {
+        alert('加载供应商失败：' + error.message);
+        return;
+    }
+
+    // 渲染供应商列表
     const supplierList = document.getElementById('supplierList');
-
-    supplierList.innerHTML = customer.suppliers?.map((supplier, i) => `
-        <div class="supplier-item ${customer.selectedSuppliers?.includes(supplier) ? 'selected' : ''}">
-            <input type="checkbox" ${customer.selectedSuppliers?.includes(supplier) ? 'checked' : ''}
-                onchange="toggleSupplier(this, '${supplier}')">
-            <span>${supplier}</span>
-            <div class="supplier-actions">
-                <button onclick="editSupplier(event, ${i})" class="btn-edit">修改</button>
-                <button onclick="deleteSupplier(event, ${i})" class="btn-delete">删除</button>
+    supplierList.innerHTML = suppliers.length
+        ? suppliers.map((s, i) => `
+            <div class="supplier-item">
+                <input type="checkbox" onchange="toggleSupplier(this, '${s.id}')">
+                <span>${s.name}</span>
+                <div class="supplier-actions">
+                    <button onclick="editSupplier('${s.id}', '${s.name}')" class="btn-edit">修改</button>
+                    <button onclick="deleteSupplier('${s.id}')" class="btn-delete">删除</button>
+                </div>
             </div>
-        </div>
-    `).join('') || '<div>暂无供货商</div>';
-
-    document.getElementById('supplierModal').style.display = 'flex';
+        `).join('')
+        : '<div>暂无供货商</div>';
 }
+
         
         //给newSupplierName输入框添加键盘事件
         document.getElementById('newSupplierName').addEventListener('keydown', function (event) {
@@ -788,14 +772,30 @@ function renderTable(customers) {
         }
 
         async function addSupplier() {
-    const newSupplierName = document.getElementById('newSupplierName').value.trim();
-    if (!newSupplierName) return alert('请填写供应商名称');
+    const name = document.getElementById('newSupplierName').value.trim();
+    if (!name) return alert('请输入供应商名称');
 
     const customer = customers[currentCustomerIndex];
+
+    const { error } = await supabaseClient
+        .from('suppliers')
+        .insert([{
+            name,
+            customer_id: customer.id,
+            user_id: user.id  // 记得在全局设置 `const user = ...`
+        }]);
+
+    if (error) {
+        alert('添加失败：' + error.message);
+    } else {
+        openSupplierModal(currentCustomerIndex); // 重新加载列表
+        document.getElementById('newSupplierName').value = '';
+    }
+}
+
     
     // 在当前客户中添加新的供应商
-    customer.suppliers = customer.suppliers || [];
-    customer.suppliers.push(newSupplierName);
+    
 
     // 保存到 Supabase
     const { error } = await supabaseClient
@@ -813,50 +813,36 @@ function renderTable(customers) {
 }
 
 
-       async function deleteSupplier(event, supplierIndex) {
-    const customer = customers[currentCustomerIndex];
-    const supplierToDelete = customer.suppliers[supplierIndex];
-
-    const confirmDelete = confirm(`确定删除供货商：${supplierToDelete}?`);
-    if (!confirmDelete) return;
-
-    // 从当前客户的供应商列表中删除
-    customer.suppliers = customer.suppliers.filter(supplier => supplier !== supplierToDelete);
-
-    // 从 Supabase 删除
+      async function deleteSupplier(supplierId) {
     const { error } = await supabaseClient
         .from('suppliers')
         .delete()
-        .eq('name', supplierToDelete) // 假设根据名字删除供应商
+        .eq('id', supplierId);
 
     if (error) {
-        alert('删除供应商失败：' + error.message);
+        alert('删除失败：' + error.message);
     } else {
-        alert('供应商删除成功！');
-        loadData(); // 重新加载客户数据
+        openSupplierModal(currentCustomerIndex); // 重新加载列表
     }
 }
 
-        async function editSupplier(event, supplierIndex) {
-    const newSupplierName = prompt('请输入新的供应商名称：', customers[currentCustomerIndex].suppliers[supplierIndex]);
-    if (!newSupplierName) return;
 
-    const customer = customers[currentCustomerIndex];
-    customer.suppliers[supplierIndex] = newSupplierName;
+        async function editSupplier(supplierId, oldName) {
+    const newName = prompt('请输入新的名称：', oldName);
+    if (!newName || newName === oldName) return;
 
-    // 更新 Supabase 中的供应商名称
     const { error } = await supabaseClient
         .from('suppliers')
-        .update({ name: newSupplierName })
-        .eq('name', customers[currentCustomerIndex].suppliers[supplierIndex]);
+        .update({ name: newName })
+        .eq('id', supplierId);
 
     if (error) {
-        alert('修改供应商失败：' + error.message);
+        alert('更新失败：' + error.message);
     } else {
-        alert('供应商修改成功！');
-        loadData(); // 重新加载客户数据
+        openSupplierModal(currentCustomerIndex);
     }
 }
+
 
 
         async function toggleSupplier(checkbox, supplierName) {
@@ -886,23 +872,7 @@ function renderTable(customers) {
         
 
 
-        async function saveSuppliers() {
-    const customer = customers[currentCustomerIndex];
-
-    // 更新当前客户的供应商列表到 Supabase
-    const { error } = await supabaseClient
-        .from('customers')
-        .update({ suppliers: customer.suppliers })
-        .eq('id', customer.id);
-
-    if (error) {
-        alert('保存供应商失败：' + error.message);
-    } else {
-        // 如果没有错误，更新表格和关闭供应商模态框
-        renderTable(customers); // 更新表格中的状态显示
-        closeSupplierModal();    // 关闭模态框
-    }
-}
+        
 
 
         // 将选中的客户加载到表单上进行编辑
