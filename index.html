@@ -499,22 +499,26 @@ h1 {
     'your-public-anon-key'
   );
 
-  const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  if (!user || !user.access_token) {
-    window.location.href = "login.html";
-  } else {
-    supabaseClient.auth.setSession({
-      access_token: user.access_token,
-      refresh_token: user.refresh_token
-    }).then(({ error }) => {
-      if (error) {
-        window.location.href = "login.html";
-      } else {
-        document.getElementById("userAvatar").src = user.avatar;
-        document.getElementById("userName").textContent = `欢迎您！${user.name}`;
-      }
-    });
-  }
+ const user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+if (!user || !user.access_token || !user.refresh_token) {
+  console.warn("用户信息不完整，跳转登录页");
+  window.location.href = "login.html";
+} else {
+  supabaseClient.auth.setSession({
+    access_token: user.access_token,
+    refresh_token: user.refresh_token
+  }).then(({ error }) => {
+    if (error) {
+      console.error("设置 session 失败：", error.message);
+      window.location.href = "login.html";
+    } else {
+      document.getElementById("userAvatar").src = user.avatar;
+      document.getElementById("userName").textContent = `欢迎您！${user.name}`;
+    }
+  });
+}
+
 
   let customers = [];
   let currentEditId = null;
