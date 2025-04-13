@@ -673,7 +673,7 @@ if (!user || !user.access_token || !user.refresh_token) {
 });
 
 
-  document.getElementById("pasteAddBtn").addEventListener("click", async () => {
+ document.getElementById("pasteAddBtn").addEventListener("click", async () => {
   const rawText = document.getElementById("pasteInput").value.trim();
   if (!rawText) return alert("请粘贴内容");
 
@@ -681,47 +681,82 @@ if (!user || !user.access_token || !user.refresh_token) {
   let successCount = 0;
   let failCount = 0;
 
-  // 👇 👇 把 match 函数放在 async 内部
-  function match(regexOrStr, text) {
-    const regex = typeof regexOrStr === "string" ? new RegExp(regexOrStr) : regexOrStr;
-    const result = text.match(regex);
-    return result ? result[1] : null;
-  }
-
   for (const entry of entries) {
     const text = entry.replace(/\n/g, " ");
     const customer = {};
 
+    function match(regexOrStr) {
+      const regex = typeof regexOrStr === "string" ? new RegExp(regexOrStr) : regexOrStr;
+      const result = text.match(regex);
+      return result ? result[1] : null;
+    }
+
+    const zhNumToNum = str => {
+      if (!str) return 0;
+      str = str.replace(/[^0-9.万]/g, '');
+      if (str.includes('万')) {
+        const num = parseFloat(str.replace('万', '')) || 0;
+        return num * 10000;
+      }
+      return parseFloat(str) || 0;
+    };
+
+    // 姓名 / 收货人
     customer.name =
-      match(/客户[：:、]?\s*([\u4e00-\u9fa5]{2,})/, text) ||
-      match(/客户姓名[：:、]?\s*([\u4e00-\u9fa5]{2,})/, text) ||
-      match(/收货人[：:、]?\s*([\u4e00-\u9fa5]{2,})/, text) ||
+      match(/客户[：:、]?\s*([\u4e00-\u9fa5]{2,})/) ||
+      match(/客户姓名[：:、]?\s*([\u4e00-\u9fa5]{2,})/) ||
+      match(/收货人[：:、]?\s*([\u4e00-\u9fa5]{2,})/) ||
       "未知";
 
+    // 电话
     customer.phone =
-      match(/电话[：:、]?\s*(1\d{10})/, text) ||
-      match(/手机[：:、]?\s*(1\d{10})/, text) ||
-      match(/(\b1\d{10}\b)/, text) || "";
+      match(/电话[：:、]?\s*(1\d{10})/) ||
+      match(/手机[：:、]?\s*(1\d{10})/) ||
+      match(/(\b1\d{10}\b)/) ||
+      "";
 
+    // 地址
     customer.address =
-      match(/地址[：:、]?\s*([\u4e00-\u9fa5A-Za-z0-9\-—· ,，省市县区镇村]+?)(?=[；;。，]|$)/, text) || "待定";
+      match(/地址[：:、]?\s*([\u4e00-\u9fa5A-Za-z0-9\-—· ,，省市县区镇村]+?)(?=[；;。，]|$)/) || "待定";
 
-    const first = parseFloat(match(/首批[：:、]?\s*([0-9,.+＋元元¥ ]+)/, text)?.replace(/[^\d.+]/g, "") || 0);
-    const gift = parseFloat(match(/赠送[：:、]?\s*([0-9,.元¥ ]+)/, text)?.replace(/[^\d.]/g, "") || 0);
-    const total = parseFloat(match(/总计发货[：:、]?\s*([0-9,.元¥ ]+)/, text)?.replace(/[^\d.]/g, "") || 0);
-    customer.amount = total || (first + gift) || first || 0;
+    // 金额计算逻辑
+    let amount = 0;
+    const totalMatch = match(/总计发货[：:、]?\s*([0-9万,.元¥＋+ ]+)/);
+    if (totalMatch) {
+      amount = zhNumToNum(totalMatch);
+    } else {
+      const equalsMatch = match(/=\s*([0-9万,.元¥＋+ ]+)/);
+      if (equalsMatch) {
+        amount = zhNumToNum(equalsMatch);
+      } else {
+        const firstMatch = match(/首批[：:、]?\s*([0-9万,.＋+ ]+)/);
+        const giftMatch = match(/赠送[：:、]?\s*([0-9万,.＋+ ]+)/);
+        const first = zhNumToNum(firstMatch);
+        const gift = zhNumToNum(giftMatch);
+        amount = first + gift;
+      }
+    }
+    customer.amount = amount;
 
+    // 客服
     customer.customer_service =
-      match(/客服[：:、]?\s*([\u4e00-\u9fa5]{2,})/, text) || "客服A";
+      match(/客服[：:、]?\s*([\u4e00-\u9fa5]{2,})/) || "客服A";
 
-    customer.note = match(/备注[：:、]?\s*(.+)/, text) || "";
-    if (text.includes("监控")) customer.note += " 含监控";
+    // 监控数量
+    const monitorMatch = text.match(/(?:监控[：:]?\s*|送|赠送)?(\d{1,2})\s*个\s*监控/);
+    customer.monitor_count = monitorMatch ? parseInt(monitorMatch[1]) : 0;
+
+    // 备注
+    customer.note = match(/备注[：:、]?\s*(.+)/) || "";
+    if (text.includes("监控")) customer.note += ` 含监控${customer.monitor_count || "?"}个`;
     if (text.includes("谷子")) customer.note += " 含谷子卡";
     if (text.includes("开业")) customer.note += " 开业礼品";
     if (text.includes("视频选货")) customer.note += " 视频选货";
 
+    // 时间（默认今天）
     customer.delivery_time = new Date().toISOString().split("T")[0];
 
+    // 保存
     const { error } = await saveCustomer(customer);
     if (error) {
       console.warn("添加失败：", customer, error.message);
@@ -736,6 +771,7 @@ if (!user || !user.access_token || !user.refresh_token) {
 
   alert(`✔️ 添加成功 ${successCount} 条，失败 ${failCount} 条`);
 });
+
 
   const themeToggle = document.getElementById("theme-toggle");
   themeToggle.addEventListener("click", () => {
