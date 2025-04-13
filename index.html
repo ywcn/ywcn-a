@@ -706,7 +706,7 @@ if (!user || !user.access_token || !user.refresh_token) {
                      match(/手机[：:、]?\s*(1\d{10})/) ||
                      match(/(\b1\d{10}\b)/) || "";
 
-    customer.address = match(/地址[：:、]?\s*([\u4e00-\u9fa5A-Za-z0-9\-—· ,，省市县区镇村]{4,50})/) || "待定";
+    customer.address = match(/地址[：:、]?\s*([\u4e00-\u9fa5A-Za-z0-9\-—· ,，省市县区镇村]{4,30})/) || "待定";
 
     // 金额智能处理
     let amount = 0;
@@ -753,7 +753,7 @@ if (!user || !user.access_token || !user.refresh_token) {
 
     // 备注
     customer.note = match(/备注[：:、]?\s*(.+)/) || "";
-    if (raw.includes("监控")) customer.note += monitorCount > 0 ? ` 含监控${monitorCount}个` : " 含监控";
+    if (raw.includes("监控")) customer.note += monitorCount > 0 ? ` 监控${monitorCount}个` : " 监控";
     if (raw.includes("谷子")) customer.note += " 含谷子卡";
     if (raw.includes("开业")) customer.note += " 开业礼品";
     if (raw.includes("视频选货")) customer.note += " 视频选货";
