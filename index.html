@@ -457,6 +457,7 @@ h1 {
         <!-- 金额汇总 + 一键删除 -->
         <div class="summary" id="totalAmount">合计金额：0</div>
         <button id="deleteAllBtn" class="btn-delete">删除所有信息</button>
+<a href="logistics_supabase_fixed.html" target="_blank" style="color:blue; text-decoration:underline;">进入物流登记页面 ➤</a>
     </div>
 
     <!-- 客户列表 -->
@@ -473,7 +474,6 @@ h1 {
                 <th>时间</th>
                 <th>操作</th>
                 <th>订单数</th>
-                <th>物流记录</th>
             </tr>
         </thead>
         <tbody id="customerTableBody"></tbody>
@@ -560,7 +560,6 @@ if (!user || !user.access_token || !user.refresh_token) {
       .order('created_at', { ascending: false });
     if (error) return alert('加载失败：' + error.message);
     customers = data;
-    await loadLogisticsSummary();
     renderTable(customers);
   }
   //渲染页面
@@ -590,15 +589,7 @@ if (!user || !user.access_token || !user.refresh_token) {
   `;
   total += parseFloat(cust.amount || 0);
   document.getElementById("totalAmount").textContent = `合计金额：${total.toFixed(2)}`;
-  
-  const logistics = logisticsMap[cust.id] || [];
-  const totalShipments = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
-  const logisticsCell = document.createElement("td");
-  logisticsCell.innerHTML = `<span style='color:blue;cursor:pointer;' onclick="showLogisticsModal('${cust.id}', '${cust.name}')">📦 ${totalShipments} 件</span>`;
-  tr.appendChild(logisticsCell);
-
   tbody.appendChild(tr);
-    
 });
 }
   
@@ -816,7 +807,7 @@ document.getElementById("searchName").addEventListener("input", function () {
   renderTable(filtered);
 });
 //筛选
-document.getElementById("filterBtn").addEventListener("click", async () => {
+document.getElementById("filterBtn").addEventListener("click", () => {
   const startDate = document.getElementById("startDate").value;
   const endDate = document.getElementById("endDate").value;
 
@@ -825,18 +816,14 @@ document.getElementById("filterBtn").addEventListener("click", async () => {
     return (!startDate || time >= startDate) && (!endDate || time <= endDate);
   });
 
-  await loadLogisticsSummary(); // 
   renderTable(filtered);
 });
 
-
-document.getElementById("clearFilterBtn").addEventListener("click", async () => {
+document.getElementById("clearFilterBtn").addEventListener("click", () => {
   document.getElementById("startDate").value = "";
   document.getElementById("endDate").value = "";
-  await loadLogisticsSummary();  // ✅ 现在没问题了
   renderTable(customers);
 });
-
 //修改密码
  function openChangePasswordModal() {
     document.getElementById("passwordModal").style.display = "flex";
@@ -1030,26 +1017,6 @@ document.querySelectorAll('.order-count-cell').forEach(cell => {
         openSupplierModal(index);
     };
 });
-        let logisticsMap = {};
-
-async function loadLogisticsSummary() {
-  const { data, error } = await supabaseClient
-    .from("logistics")
-    .select("customer_id, shipment_count, shipment_date")
-    .order("shipment_date", { ascending: false });
-
-  if (error) {
-    console.error("加载物流失败：", error.message);
-    return;
-  }
-
-  logisticsMap = {};
-  for (const row of data) {
-    if (!logisticsMap[row.customer_id]) logisticsMap[row.customer_id] = [];
-    logisticsMap[row.customer_id].push(row);
-  }
-}
-
 </script>
 
 
@@ -1061,6 +1028,31 @@ async function loadLogisticsSummary() {
     <button onclick="closeLogisticsModal()" style="margin-top: 10px;" class="btn-delete">关闭</button>
   </div>
 </div>
+
+<script>
+  window.showLogisticsModal = function (customerId, name) {
+    const list = logisticsMap[customerId] || [];
+    document.getElementById("logisticsModalName").textContent = name;
+    const box = document.getElementById("logisticsList");
+    box.innerHTML = "";
+
+    if (list.length === 0) {
+      box.innerHTML = "<p>暂无物流记录</p>";
+    } else {
+      list.forEach(item => {
+        const p = document.createElement("p");
+        p.textContent = `📦 ${item.shipment_count} 件 - ${item.shipment_date}`;
+        box.appendChild(p);
+      });
+    }
+
+    document.getElementById("logisticsModal").style.display = "flex";
+  };
+
+  window.closeLogisticsModal = function () {
+    document.getElementById("logisticsModal").style.display = "none";
+  };
+</script>
 
 </body>
 
