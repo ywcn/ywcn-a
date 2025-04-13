@@ -674,18 +674,75 @@ if (!user || !user.access_token || !user.refresh_token) {
 
 
   document.getElementById("pasteAddBtn").addEventListener("click", async () => {
-    const text = document.getElementById("pasteInput").value.trim();
-    if (!text) return alert("请粘贴内容");
+  const rawText = document.getElementById("pasteInput").value.trim();
+  if (!rawText) return alert("请粘贴内容");
 
-    const customer = {
-      name: "示例",
-      phone: "13800138000",
-      address: "测试地址",
-      amount: 100,
-      customer_service: "客服A",
-      note: "系统添加",
-      delivery_time: "2025-04-01"
-    };
+  const entries = rawText.split(/\n\s*\n/); // 用空行分隔每条记录
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const entry of entries) {
+    const text = entry.replace(/\n/g, " "); // 单条记录处理为一行
+    const customer = {};
+
+    // 客户名
+    customer.name =
+      match(/客户[：:、]?\s*([\u4e00-\u9fa5]{2,})/) ||
+      match(/客户姓名[：:、]?\s*([\u4e00-\u9fa5]{2,})/) ||
+      match(/收货人[：:、]?\s*([\u4e00-\u9fa5]{2,})/) ||
+      "未知";
+
+    // 电话
+    customer.phone =
+      match(/电话[：:、]?\s*(1\d{10})/) ||
+      match(/手机[：:、]?\s*(1\d{10})/) ||
+      match(/(\b1\d{10}\b)/) ||
+      "";
+
+    // 地址
+    customer.address =
+      match(/地址[：:、]?\s*([\u4e00-\u9fa5A-Za-z0-9\-—· ,，省市县区镇村]+?)(?=[；;。，]|$)/) || "待定";
+
+    // 金额相关
+    const first = parseFloat(match(/首批[：:、]?\s*([0-9,.+＋元元¥ ]+)/)?.replace(/[^\d.+]/g, "") || 0);
+    const gift = parseFloat(match(/赠送[：:、]?\s*([0-9,.元¥ ]+)/)?.replace(/[^\d.]/g, "") || 0);
+    const total = parseFloat(match(/总计发货[：:、]?\s*([0-9,.元¥ ]+)/)?.replace(/[^\d.]/g, "") || 0);
+    customer.amount = total || (first + gift) || first || 0;
+
+    // 客服
+    customer.customer_service =
+      match(/客服[：:、]?\s*([\u4e00-\u9fa5]{2,})/) || "客服A";
+
+    // 备注（收集监控、礼品等关键词）
+    customer.note = match(/备注[：:、]?\s*(.+)/) || "";
+    if (text.includes("监控")) customer.note += " 含监控";
+    if (text.includes("谷子")) customer.note += " 含谷子卡";
+    if (text.includes("开业")) customer.note += " 开业礼品";
+    if (text.includes("视频选货")) customer.note += " 视频选货";
+
+    customer.delivery_time = new Date().toISOString().split("T")[0]; // 默认今天
+
+    const { error } = await saveCustomer(customer);
+    if (error) {
+      console.warn("添加失败：", customer, error.message);
+      failCount++;
+    } else {
+      successCount++;
+    }
+  }
+
+  loadData();
+  document.getElementById("pasteInput").value = '';
+
+  alert(`✔️ 添加成功 ${successCount} 条，失败 ${failCount} 条`);
+  
+  function match(regexOrStr) {
+    const regex = typeof regexOrStr === "string" ? new RegExp(regexOrStr) : regexOrStr;
+    const result = text.match(regex);
+    return result ? result[1] : null;
+  }
+});
+
 
     await saveCustomer(customer);
     loadData();
