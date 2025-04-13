@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物流信息登记页面</title>
+<style>
+     * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            /* 设置最大宽度 */
+            margin: 0 auto;
+        }
+
+        .form,
+        .filter {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .input {
+            width: 100%;
+            max-width: 48%;
+            /* 控制输入框宽度，使其适配较小屏幕 */
+            height: 40px;
+            margin: 5px 0;
+            padding: 0 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            max-width: 48%;
+            /* 控制按钮宽度 */
+            height: 40px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background-color: #45a049;
+        }
+
+        .filter-input {
+            width: 100%;
+            max-width: 48%;
+            /* 控制筛选输入框的宽度 */
+            height: 40px;
+            margin: 5px 0;
+            padding: 0 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .filter-btn {
+            height: 40px;
+            width: 100%;
+            max-width: 48%;
+            /* 控制筛选按钮的宽度 */
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .filter-btn:hover {
+            background-color: #45a049;
+        }
+
+        .customer-list {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            margin-top: 20px;
+        }
+
+        .customer-list th,
+        .customer-list td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .customer-list th {
+            background-color: #f2f2f2;
+        }
+
+        .customer-list td input {
+            width: 60px;
+            height: 30px;
+            text-align: center;
+        }
+
+        .customer-list td button {
+            padding: 5px 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .customer-list td button:hover {
+            background-color: #d32f2f;
+        }
+
+        /* 响应式设计 - 当屏幕宽度小于768px时，调整表格样式 */
+        @media (max-width: 768px) {
+
+            .customer-list th,
+            .customer-list td {
+                font-size: 12px;
+                padding: 8px;
+            }
+
+            .customer-list td input {
+                width: 100%;
+                /* 让输入框宽度填满单元格 */
+            }
+
+            .input,
+            .submit-btn,
+            .filter-input,
+            .filter-btn {
+                width: 100%;
+                /* 让表单元素宽度适应手机屏幕 */
+                max-width: 100%;
+                /* 确保输入框宽度填充容器 */
+            }
+            .iptData{
+            width:100%
+            }
+            .form {
+                flex-direction: column;
+            }
+        }
+
+        /* 更小屏幕时调整输入框大小 */
+        @media (max-width: 480px) {
+
+            .input,
+            .submit-btn,
+            .filter-input,
+            .filter-btn {
+                height: 35px;
+            }
+            .iptData{
+            width:100%
+            }
+            .customer-list td input {
+                height: 25px;
+            }
+
+            .customer-list td button {
+                font-size: 12px;
+                padding: 4px 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 表单区域 -->
+        <form id="shippingForm" class="form">
+            <input type="text" id="customerName" placeholder="客户姓名" class="input">
+            <input type="number" id="shipmentCount" placeholder="发货件数" class="input">
+            <input type="date" id="shipmentDate" class="input iptData">
+            <button type="submit" class="submit-btn">提交</button>
+            
+        </form>
+
+        <!-- 筛选区域 -->
+        <div class="filter">
+            <input type="date" id="filterDate" class="filter-input iptData">
+            <button onclick="filterData()" class="filter-btn">筛选</button>
+        </div>
+        <div><button type="button" onclick="deleteAllCustomers()" class="submit-btn">删除所有客户</button></div>
+        <!-- 客户列表 -->
+        <table id="customerList" class="customer-list">
+            <thead>
+                <tr>
+                    <th>序号</th>
+                    <th>客户姓名</th>
+                    <th>发货件数</th>
+                    <th>发货日期</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3">合计件数</td>
+                    <td id="totalCount">0</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script type="module">
+  const supabase = supabase.createClient(
+    'https://mdgczfpcturvgtxjzrfc.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'
+  );
+
+  let logisticsData = [];
+
+  async function loadLogistics() {
+    const { data, error } = await supabase.from("logistics").select("*").order("shipment_date", { ascending: false });
+    if (error) {
+      alert("加载失败：" + error.message);
+      return;
+    }
+    logisticsData = data;
+    renderTable(logisticsData);
+  }
+
+  async function addLogistics(e) {
+    e.preventDefault();
+    const name = document.getElementById("customerName").value.trim();
+    const count = parseInt(document.getElementById("shipmentCount").value);
+    const date = document.getElementById("shipmentDate").value;
+
+    if (!name || !count || !date) return alert("请填写完整的表单！");
+
+    const { error } = await supabase.from("logistics").insert([{
+      customer_name: name,
+      shipment_count: count,
+      shipment_date: date
+    }]);
+
+    if (error) return alert("提交失败：" + error.message);
+
+    document.getElementById("shippingForm").reset();
+    loadLogistics();
+  }
+
+  async function deleteLogistics(index) {
+    const item = logisticsData[index];
+    const { error } = await supabase.from("logistics").delete().eq("id", item.id);
+    if (error) return alert("删除失败：" + error.message);
+    loadLogistics();
+  }
+
+  async function deleteAllCustomers() {
+    if (confirm("您确定要删除所有客户记录吗？")) {
+      const { error } = await supabase.from("logistics").delete().not("id", "is", null);
+      if (error) return alert("删除失败：" + error.message);
+      loadLogistics();
+    }
+  }
+
+  function renderTable(data) {
+    const tbody = document.querySelector("#customerList tbody");
+    tbody.innerHTML = "";
+    let total = 0;
+
+    data.forEach((row, index) => {
+      total += row.shipment_count;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${row.customer_name}</td>
+        <td>${row.shipment_count}</td>
+        <td>${row.shipment_date}</td>
+        <td><button onclick="deleteLogistics(${index})">删除</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById("totalCount").textContent = total;
+  }
+
+  function filterData() {
+    const date = document.getElementById("filterDate").value;
+    if (!date) return renderTable(logisticsData);
+    const filtered = logisticsData.filter(d => d.shipment_date === date);
+    renderTable(filtered);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadLogistics();
+    document.getElementById("shippingForm").addEventListener("submit", addLogistics);
+  });
+</script>
+
+</body>
+
+</html>
