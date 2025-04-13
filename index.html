@@ -1030,6 +1030,26 @@ document.querySelectorAll('.order-count-cell').forEach(cell => {
         openSupplierModal(index);
     };
 });
+        let logisticsMap = {};
+
+async function loadLogisticsSummary() {
+  const { data, error } = await supabaseClient
+    .from("logistics")
+    .select("customer_id, shipment_count, shipment_date")
+    .order("shipment_date", { ascending: false });
+
+  if (error) {
+    console.error("加载物流失败：", error.message);
+    return;
+  }
+
+  logisticsMap = {};
+  for (const row of data) {
+    if (!logisticsMap[row.customer_id]) logisticsMap[row.customer_id] = [];
+    logisticsMap[row.customer_id].push(row);
+  }
+}
+
 </script>
 
 
