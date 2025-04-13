@@ -676,7 +676,7 @@ if (!user || !user.access_token || !user.refresh_token) {
  async function smartParseCustomers(text) {
   if (!text) return alert("请粘贴内容");
 
-  const entries = text.trim().split(/\n\s*\n/); // 用空行分段
+  const entries = text.trim().split(/\n\s*\n/); // 空行分段
   let successCount = 0;
   let failLines = [];
 
@@ -707,7 +707,7 @@ if (!user || !user.access_token || !user.refresh_token) {
 
     customer.address = match(/地址[：:、]?\s*([\u4e00-\u9fa5A-Za-z0-9\-—· ,，省市县区镇村]{4,50})/) || "待定";
 
-    // 金额智能合并（总计发货 > 等号 > 首批 + 赠送）
+    // 金额智能处理
     let amount = 0;
     const totalMatch = match(/总计发货[：:、]?\s*([0-9万,.元¥＋+ ]+)/);
     if (totalMatch) {
@@ -718,14 +718,13 @@ if (!user || !user.access_token || !user.refresh_token) {
         amount = zhNumToNum(equalsMatch);
       } else {
         const firstMatch =
-  match(/首批货款[：:、]?\s*([0-9万,.＋+ ]+)/) ||
-  match(/首批[：:、]?\s*([0-9万,.＋+ ]+)/);
-const giftMatch = match(/赠送[：:、]?\s*([0-9万,.＋+ ]+)/);
-const first = zhNumToNum(firstMatch);
+          match(/首批货款[：:、]?\s*([0-9万,.＋+ ]+)/) ||
+          match(/首批[：:、]?\s*([0-9万,.＋+ ]+)/);
+        const giftMatch = match(/赠送[：:、]?\s*([0-9万,.＋+ ]+)/);
 
-amount = first + gift;
+        const first = zhNumToNum(firstMatch);
+        const gift = zhNumToNum(giftMatch);
 
-        const gift = zhNumToNum(match(/赠送[：:、]?\s*([0-9万,.＋+ ]+)/));
         amount = first + gift;
       }
     }
@@ -734,7 +733,7 @@ amount = first + gift;
     // 客服
     customer.customer_service = match(/客服[：:、]?\s*([\u4e00-\u9fa5]{2,})/) || "客服A";
 
-    // 监控数量（尝试多种写法）
+    // 监控数量（多写法支持）
     let monitorCount = 0;
     const monitorPatterns = [
       /(?:送|赠送)?\s*(\d{1,2})\s*个\s*监控/,
@@ -743,25 +742,25 @@ amount = first + gift;
       /监控共?(\d{1,2})/
     ];
     for (const pattern of monitorPatterns) {
-      const match = raw.match(pattern);
-      if (match) {
-        monitorCount = parseInt(match[1] || match[2]);
+      const m = raw.match(pattern);
+      if (m) {
+        monitorCount = parseInt(m[1] || m[2]);
         break;
       }
     }
     customer.monitor_count = monitorCount;
 
-    // 备注字段增强
+    // 备注
     customer.note = match(/备注[：:、]?\s*(.+)/) || "";
     if (raw.includes("监控")) customer.note += monitorCount > 0 ? ` 含监控${monitorCount}个` : " 含监控";
     if (raw.includes("谷子")) customer.note += " 含谷子卡";
     if (raw.includes("开业")) customer.note += " 开业礼品";
     if (raw.includes("视频选货")) customer.note += " 视频选货";
 
-    // 默认发货时间为今天
+    // 发货时间（默认今天）
     customer.delivery_time = new Date().toISOString().split("T")[0];
 
-    // 提交到数据库
+    // 保存
     const { error } = await saveCustomer(customer);
     if (error) {
       failLines.push(`第 ${i + 1} 条：${error.message}`);
