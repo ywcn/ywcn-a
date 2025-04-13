@@ -816,7 +816,7 @@ document.getElementById("searchName").addEventListener("input", function () {
   renderTable(filtered);
 });
 //筛选
-document.getElementById("filterBtn").addEventListener("click", () => {
+document.getElementById("filterBtn").addEventListener("click", async () => {
   const startDate = document.getElementById("startDate").value;
   const endDate = document.getElementById("endDate").value;
 
@@ -825,15 +825,18 @@ document.getElementById("filterBtn").addEventListener("click", () => {
     return (!startDate || time >= startDate) && (!endDate || time <= endDate);
   });
 
+  await loadLogisticsSummary(); // 
   renderTable(filtered);
 });
 
-document.getElementById("clearFilterBtn").addEventListener("click", () => {
+
+document.getElementById("clearFilterBtn").addEventListener("click", async () => {
   document.getElementById("startDate").value = "";
   document.getElementById("endDate").value = "";
-  await loadLogisticsSummary();
-    renderTable(customers);
+  await loadLogisticsSummary();  // ✅ 现在没问题了
+  renderTable(customers);
 });
+
 //修改密码
  function openChangePasswordModal() {
     document.getElementById("passwordModal").style.display = "flex";
