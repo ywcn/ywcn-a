@@ -722,7 +722,7 @@ if (!user || !user.access_token || !user.refresh_token) {
   match(/首批[：:、]?\s*([0-9万,.＋+ ]+)/);
 const giftMatch = match(/赠送[：:、]?\s*([0-9万,.＋+ ]+)/);
 const first = zhNumToNum(firstMatch);
-const gift = zhNumToNum(giftMatch);
+
 amount = first + gift;
 
         const gift = zhNumToNum(match(/赠送[：:、]?\s*([0-9万,.＋+ ]+)/));
