@@ -705,7 +705,7 @@ if (!user || !user.access_token || !user.refresh_token) {
                      match(/手机[：:、]?\s*(1\d{10})/) ||
                      match(/(\b1\d{10}\b)/) || "";
 
-    customer.address = match(/地址[：:、]?\s*([\u4e00-\u9fa5A-Za-z0-9\-—· ,，省市县区镇村]+?)(?=[；;。，]|$)/) || "待定";
+    customer.address = match(/地址[：:、]?\s*([\u4e00-\u9fa5A-Za-z0-9\-—· ,，省市县区镇村]{4,50})/) || "待定";
 
     // 金额智能合并（总计发货 > 等号 > 首批 + 赠送）
     let amount = 0;
@@ -717,7 +717,14 @@ if (!user || !user.access_token || !user.refresh_token) {
       if (equalsMatch) {
         amount = zhNumToNum(equalsMatch);
       } else {
-        const first = zhNumToNum(match(/首批[：:、]?\s*([0-9万,.＋+ ]+)/));
+        const firstMatch =
+  match(/首批货款[：:、]?\s*([0-9万,.＋+ ]+)/) ||
+  match(/首批[：:、]?\s*([0-9万,.＋+ ]+)/);
+const giftMatch = match(/赠送[：:、]?\s*([0-9万,.＋+ ]+)/);
+const first = zhNumToNum(firstMatch);
+const gift = zhNumToNum(giftMatch);
+amount = first + gift;
+
         const gift = zhNumToNum(match(/赠送[：:、]?\s*([0-9万,.＋+ ]+)/));
         amount = first + gift;
       }
