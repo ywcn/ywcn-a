@@ -312,30 +312,30 @@ h1 {
             border-color: #4CAF50;
         }
 
-        .supplier-item:hover {
+.supplier-item:hover {
             transform: translateY(-2px);
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .supplier-item input[type="checkbox"] {
+.supplier-item input[type="checkbox"] {
             /* margin-right: 8px; */
             accent-color: #4CAF50;
             width: 10px;
             height: 10px;
         }
 
-        .supplier-actions {
+.supplier-actions {
             margin-left: auto;
             display: flex;
             gap: 5px;
         }
 
-        .supplier-actions button {
+.supplier-actions button {
             margin-left: 5px;
             padding: 3px 8px;
 
         }
-        .supplier-item {
+.supplier-item {
   display: inline-block;
   margin: 5px;
   padding: 10px 16px;
@@ -557,7 +557,7 @@ if (!user || !user.access_token || !user.refresh_token) {
     customers = data;
     renderTable(customers);
   }
-
+  //渲染页面
   function renderTable(dataArray) {
     const tbody = document.getElementById("customerTableBody");
     tbody.innerHTML = "";
@@ -586,7 +586,7 @@ if (!user || !user.access_token || !user.refresh_token) {
   tbody.appendChild(tr);
 });
 }
-
+  
   function loadCustomerToForm(index) {
     const cust = customers[index];
     currentEditId = cust.id;
@@ -622,7 +622,7 @@ if (!user || !user.access_token || !user.refresh_token) {
       return await supabaseClient.from("customers").insert([customer]);
     }
   }
-
+  //手动添加客户
   document.getElementById("addCustomerBtn").addEventListener("click", async () => {
     const customer = {
       name: document.getElementById("name").value.trim(),
@@ -644,7 +644,8 @@ if (!user || !user.access_token || !user.refresh_token) {
       alert("保存失败：" + error.message);
     }
   });
-
+        
+  //删除所有信息
   async function deleteCustomer(index) {
     const id = customers[index].id;
     const { error } = await supabaseClient.from("customers").delete().eq("id", id);
@@ -909,7 +910,7 @@ function closeSupplierModal() {
     document.getElementById('supplierModal').style.display = 'none';
 }
 
-// 添加新的供应商
+// 添加新的供应商按钮点击事件
 async function addSupplier() {
     const name = document.getElementById('newSupplierName').value.trim();
     if (!name) return alert('请输入供应商名称');
@@ -918,6 +919,16 @@ async function addSupplier() {
     openSupplierModal(currentCustomerIndex);
     document.getElementById('newSupplierName').value = '';
 }
+//添加新的供应商键盘事件
+ document.getElementById('newSupplierName').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') {
+    const name = this.value.trim();
+    if (name) {
+      addSupplier();  // 原函数中已经有去重逻辑
+      setTimeout(() => this.focus(), 100); // 添加后自动回到输入框
+    }
+  }
+});
 
 // 编辑供应商
 async function editSupplier(id, oldName) {
