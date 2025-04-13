@@ -706,8 +706,8 @@ if (!user || !user.access_token || !user.refresh_token) {
     customer.phone = match(/电话[：:、]?\s*(1\d{10})/) ||
                      match(/手机[：:、]?\s*(1\d{10})/) ||
                      match(/(\b1\d{10}\b)/) || "";
-
-    customer.address = match(/地址[：:、]?\s*([\u4e00-\u9fa5A-Za-z0-9\-—· ,，省市县区镇村]{4,30})/) || "待定";
+    customer.address = match(/地址[：:、]?\s*([\u4e00-\u9fa5A-Za-z0-9\-—· ,，省市县区镇村]+?)(?=[；;。，]|$)/) || "待定";
+    // customer.address = match(/地址[：:、]?\s*([\u4e00-\u9fa5A-Za-z0-9\-—· ,，省市县区镇村]{4,30})/) || "待定";
 
     // 金额智能处理
     let amount = 0;
