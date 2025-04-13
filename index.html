@@ -473,6 +473,7 @@ h1 {
                 <th>时间</th>
                 <th>操作</th>
                 <th>订单数</th>
+                <th>物流记录</th>
             </tr>
         </thead>
         <tbody id="customerTableBody"></tbody>
@@ -559,6 +560,7 @@ if (!user || !user.access_token || !user.refresh_token) {
       .order('created_at', { ascending: false });
     if (error) return alert('加载失败：' + error.message);
     customers = data;
+    await loadLogisticsSummary();
     renderTable(customers);
   }
   //渲染页面
@@ -588,7 +590,15 @@ if (!user || !user.access_token || !user.refresh_token) {
   `;
   total += parseFloat(cust.amount || 0);
   document.getElementById("totalAmount").textContent = `合计金额：${total.toFixed(2)}`;
+  
+  const logistics = logisticsMap[cust.id] || [];
+  const totalShipments = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
+  const logisticsCell = document.createElement("td");
+  logisticsCell.innerHTML = `<span style='color:blue;cursor:pointer;' onclick="showLogisticsModal('${cust.id}', '${cust.name}')">📦 ${totalShipments} 件</span>`;
+  tr.appendChild(logisticsCell);
+
   tbody.appendChild(tr);
+    
 });
 }
   
@@ -821,7 +831,8 @@ document.getElementById("filterBtn").addEventListener("click", () => {
 document.getElementById("clearFilterBtn").addEventListener("click", () => {
   document.getElementById("startDate").value = "";
   document.getElementById("endDate").value = "";
-  renderTable(customers);
+  await loadLogisticsSummary();
+    renderTable(customers);
 });
 //修改密码
  function openChangePasswordModal() {
@@ -1017,6 +1028,16 @@ document.querySelectorAll('.order-count-cell').forEach(cell => {
     };
 });
 </script>
+
+
+<!-- 物流详情弹窗 -->
+<div id="logisticsModal" class="modal" style="display:none;">
+  <div class="modal-content" style="width: 400px;">
+    <h3>📦 物流记录 - <span id="logisticsModalName"></span></h3>
+    <div id="logisticsList"></div>
+    <button onclick="closeLogisticsModal()" style="margin-top: 10px;" class="btn-delete">关闭</button>
+  </div>
+</div>
 
 </body>
 
