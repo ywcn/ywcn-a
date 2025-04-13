@@ -584,6 +584,7 @@ if (!user || !user.access_token || !user.refresh_token) {
     </td>
   `;
   total += parseFloat(cust.amount || 0);
+  document.getElementById("totalAmount").textContent = `合计金额：${total.toFixed(2)}`;
   tbody.appendChild(tr);
 });
 }
@@ -795,6 +796,31 @@ document.getElementById("pasteAddBtn").addEventListener("click", async () => {
     themeToggle.classList.toggle("active", saved === "dark");
     loadData();
   }; 
+//搜索功能
+document.getElementById("searchName").addEventListener("input", function () {
+  const keyword = this.value.trim();
+  const filtered = customers.filter(c => c.name.includes(keyword));
+  renderTable(filtered);
+});
+//筛选
+document.getElementById("filterBtn").addEventListener("click", () => {
+  const startDate = document.getElementById("startDate").value;
+  const endDate = document.getElementById("endDate").value;
+
+  const filtered = customers.filter(c => {
+    const time = c.delivery_time?.split('T')[0];
+    return (!startDate || time >= startDate) && (!endDate || time <= endDate);
+  });
+
+  renderTable(filtered);
+});
+
+document.getElementById("clearFilterBtn").addEventListener("click", () => {
+  document.getElementById("startDate").value = "";
+  document.getElementById("endDate").value = "";
+  renderTable(customers);
+});
+//修改密码
  function openChangePasswordModal() {
     document.getElementById("passwordModal").style.display = "flex";
 }
