@@ -516,6 +516,14 @@ h1 {
         </div>
     </div>
 </div>
+    <!-- 物流详情弹窗 -->
+<div id="logisticsModal" class="modal" style="display:none;">
+  <div class="modal-content" style="width: 400px;">
+    <h3>📦 物流记录 - <span id="logisticsModalName"></span></h3>
+    <div id="logisticsList"></div>
+    <button onclick="closeLogisticsModal()" style="margin-top: 10px;" class="btn-delete">关闭</button>
+  </div>
+</div>
     <script>
   const supabaseClient = supabase.createClient(
     'https://mdgczfpcturvgtxjzrfc.supabase.co',
@@ -572,7 +580,10 @@ if (!user || !user.access_token || !user.refresh_token) {
   const tr = document.createElement("tr");
   tr.innerHTML = `
     <td>${index + 1}</td>
-    <td>${cust.name}</td>
+    <td style="cursor:pointer; color:#007bff;"
+    onmouseenter="showLogisticsModal('${cust.id}', '${cust.name}')">
+    ${cust.name}
+</td>
     <td><a href="tel:${cust.phone}">${cust.phone}</a></td>
     <td>${cust.address}</td>
     <td>${cust.amount}</td>
@@ -1017,19 +1028,7 @@ document.querySelectorAll('.order-count-cell').forEach(cell => {
         openSupplierModal(index);
     };
 });
-</script>
 
-
-<!-- 物流详情弹窗 -->
-<div id="logisticsModal" class="modal" style="display:none;">
-  <div class="modal-content" style="width: 400px;">
-    <h3>📦 物流记录 - <span id="logisticsModalName"></span></h3>
-    <div id="logisticsList"></div>
-    <button onclick="closeLogisticsModal()" style="margin-top: 10px;" class="btn-delete">关闭</button>
-  </div>
-</div>
-
-<script>
   window.showLogisticsModal = function (customerId, name) {
     const list = logisticsMap[customerId] || [];
     document.getElementById("logisticsModalName").textContent = name;
