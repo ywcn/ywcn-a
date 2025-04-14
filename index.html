@@ -548,7 +548,7 @@ if (!user || !user.access_token || !user.refresh_token) {
       alert("token 设置失败：" + error.message);
       window.location.href = "login.html";
     } else {
-      console.log("✅ Supabase 会话恢复成功！");
+      
       document.getElementById("userAvatar").src = user.avatar;
       document.getElementById("userName").textContent = `欢迎您！${user.name}`;
       document.body.style.display = "block";
@@ -1041,6 +1041,38 @@ async function renderCustomerLogistics(customer) {
 
 </script>
 
+
+<script>
+async function showLogistics(customerId, name) {
+  const { data } = await supabaseClient
+    .from("logistics")
+    .select("*")
+    .eq("customer_id", customerId)
+    .order("shipment_date", { ascending: false });
+
+  const modal = document.getElementById("logisticsModal");
+  document.getElementById("logisticsModalName").textContent = name;
+  const list = document.getElementById("logisticsList");
+  list.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    list.innerHTML = "<p>暂无物流记录</p>";
+  } else {
+    data.forEach(item => {
+      const p = document.createElement("p");
+      p.textContent = `📦 ${item.shipment_count} 件 - ${item.shipment_date}`;
+      list.appendChild(p);
+    });
+  }
+
+  modal.style.display = "flex";
+}
+
+function closeLogisticsModal() {
+  document.getElementById("logisticsModal").style.display = "none";
+}
+</script>
 </body>
+
 
 </html>
