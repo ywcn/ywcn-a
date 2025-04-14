@@ -594,6 +594,19 @@ if (!user || !user.access_token || !user.refresh_token) {
     <td class="order-count" data-customer-id="${cust.id}" onclick="openSupplierModal(${index})">
       已回货${cust.delivered_count || 0} / 未回货${cust.not_delivered_count || 0}
     </td>
+    const logisticsTd = document.createElement("td");
+    logisticsTd.innerHTML = `加载中...`;
+    tr.appendChild(logisticsTd);
+
+   const { data: logistics } = await supabaseClient
+  .from("logistics")
+  .select("shipment_count")
+  .eq("customer_id", c.id);
+
+const total = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
+logisticsTd.innerHTML = `物流：${total} 件 
+  <button onclick="showLogistics('${c.id}', '${c.name}')">查看</button>`;
+
   `;
   total += parseFloat(cust.amount || 0);
   document.getElementById("totalAmount").textContent = `合计金额：${total.toFixed(2)}`;
