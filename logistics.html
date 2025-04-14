@@ -171,6 +171,7 @@
         shipment_date: r.shipment_date
       })).filter(r => r.customer_name && r.shipment_count && r.shipment_date);
       await supabase.from("logistics").insert(rows);
+      console.log("📥 准备导入的 rows：", rows);
       alert("导入成功：" + rows.length + " 条");
       loadLogistics();
     };
