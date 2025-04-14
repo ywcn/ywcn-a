@@ -473,7 +473,8 @@ h1 {
                 <th>备注</th>
                 <th>时间</th>
                 <th>操作</th>
-                <th>订单数</th>
+                <th>订单</th>
+                <th>物流</th>
             </tr>
         </thead>
         <tbody id="customerTableBody"></tbody>
@@ -615,7 +616,7 @@ if (!user || !user.access_token || !user.refresh_token) {
         logisticsTd.innerHTML = "加载失败";
       } else {
         const totalShipmentCount = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
-        logisticsTd.innerHTML = `物流：${totalShipmentCount} 件 <button onclick="showLogistics('${cust.id}', '${cust.name}')">查看</button>`;
+        logisticsTd.innerHTML = `已发：${totalShipmentCount} 件 <button onclick="showLogistics('${cust.id}', '${cust.name}')">"📦"</button>`;
       }
     } catch (e) {
       logisticsTd.innerHTML = "异常";
