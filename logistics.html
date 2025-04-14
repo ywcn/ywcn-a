@@ -95,6 +95,7 @@
         <button onclick="exportToExcel()">导出</button>
       </div>
     </div>
+<button onclick="deleteAllLogistics()">🗑️ 删除所有物流记录</button>
 
     <div class="card">
       <div class="stats" id="summaryText">共 0 条记录，总发货 0 件</div>
@@ -239,7 +240,12 @@
     document.getElementById("endDate").value = "";
     renderTable(logisticsData);
   };
-  
+  document.getElementById("searchName").addEventListener("input", (e) => {
+  if (e.target.value.trim() === "") {
+    renderTable(logisticsData); // 自动恢复所有数据
+  }
+});
+
   function toggleTheme() {
     document.body.classList.toggle("dark-mode");
     localStorage.setItem("theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
@@ -251,6 +257,16 @@
     loadLogistics();
   };
   
+window.deleteAllLogistics = async () => {
+  if (confirm("确定要删除所有物流记录吗？此操作不可恢复！")) {
+    const { error } = await supabase.from("logistics").delete().neq("id", "");
+    if (error) alert("删除失败：" + error.message);
+    else {
+      alert("已删除所有记录");
+      loadLogistics();
+    }
+  }
+};
 
 </script>
 </body>
