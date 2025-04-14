@@ -576,11 +576,13 @@ if (!user || !user.access_token || !user.refresh_token) {
     tbody.innerHTML = "";
     let total = 0;
 
-    dataArray.forEach((cust, index) => {
+    dataArray.forEach(async (cust, index) => {
   const tr = document.createElement("tr");
+
+  // 基本的客户信息行
   tr.innerHTML = `
     <td>${index + 1}</td>
-    <td> ${cust.name}</td>
+    <td>${cust.name}</td>
     <td><a href="tel:${cust.phone}">${cust.phone}</a></td>
     <td>${cust.address}</td>
     <td>${cust.amount}</td>
@@ -594,41 +596,36 @@ if (!user || !user.access_token || !user.refresh_token) {
     <td class="order-count" data-customer-id="${cust.id}" onclick="openSupplierModal(${index})">
       已回货${cust.delivered_count || 0} / 未回货${cust.not_delivered_count || 0}
     </td>
-    const logisticsTd = document.createElement("td");
-    logisticsTd.innerHTML = `加载中...`;
-    tr.appendChild(logisticsTd);
-
-   const { data: logistics } = await supabaseClient
-  .from("logistics")
-  .select("shipment_count")
-  .eq("customer_id", c.id);
-
-const total = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
-logisticsTd.innerHTML = `物流：${total} 件 
-  <button onclick="showLogistics('${c.id}', '${c.name}')">查看</button>`;
-
   `;
+
+  // 创建物流信息的 TD，并添加到行中
+  const logisticsTd = document.createElement("td");
+  logisticsTd.innerHTML = `加载中...`;
+  tr.appendChild(logisticsTd);
+
+  // 从 Supabase 获取物流数据
+  const { data: logistics, error } = await supabaseClient
+    .from("logistics")
+    .select("shipment_count")
+    .eq("customer_id", cust.id);
+
+  if (error) {
+    console.error("获取物流数据出错:", error);
+    logisticsTd.innerHTML = "加载失败";
+  } else {
+    const totalShipmentCount = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
+    logisticsTd.innerHTML = `物流：${totalShipmentCount} 件 
+      <button onclick="showLogistics('${cust.id}', '${cust.name}')">查看</button>`;
+  }
+
+  // 更新合计金额
   total += parseFloat(cust.amount || 0);
   document.getElementById("totalAmount").textContent = `合计金额：${total.toFixed(2)}`;
+
+  // 将行添加到表格中
   tbody.appendChild(tr);
 });
-}
-  window.addEventListener("storage", async (e) => {
-  if (e.key === "refresh_logistics") {
-    console.log("📦 检测到物流更新，自动刷新客户表");
 
-    const { data, error } = await supabaseClient
-      .from("customers")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) return alert("刷新失败：" + error.message);
-
-    customers = data;
-    
-    renderTable(customers);
-  }
-});
 
   function loadCustomerToForm(index) {
     const cust = customers[index];
