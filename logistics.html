@@ -235,11 +235,7 @@
     if (localStorage.getItem("theme") === "dark") document.body.classList.add("dark-mode");
     loadLogistics();
   };
-  const { error } = await supabase.from("logistics").insert([...]);
-if (error) {
-  console.error("❌ 插入失败详情：", error);
-  alert("添加失败：" + error.message);
-}
+  
 
 </script>
 </body>
