@@ -1025,23 +1025,19 @@ document.querySelectorAll('.order-count-cell').forEach(cell => {
         openSupplierModal(index);
     };
 });
-const { data: logistics } = await supabase
-  .from("logistics")
-  .select("shipment_count")
-  .eq("customer_id", customer.id);
-
-const total = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
-
-td.innerHTML = `物流记录：${total} 件 <button onclick="showLogistics(${customer.id})">查看</button>`;
-async function showLogistics(customerId) {
-  const { data } = await supabase
+async function renderCustomerLogistics(customer) {
+  const { data: logistics } = await supabase
     .from("logistics")
-    .select("*")
-    .eq("customer_id", customerId)
-    .order("shipment_date", { ascending: false });
+    .select("shipment_count")
+    .eq("customer_id", customer.id);
 
-  // 渲染弹窗内容
+  const total = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
+
+  const td = document.createElement("td");
+  td.innerHTML = `物流记录：${total} 件 <button onclick="showLogistics('${customer.id}')">查看</button>`;
+  // 然后把 td 插入页面
 }
+
 
 </script>
 
