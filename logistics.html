@@ -95,10 +95,11 @@
         <button onclick="exportToExcel()">导出</button>
       </div>
     </div>
-<button onclick="deleteAllLogistics()">🗑️ 删除所有物流记录</button>
+
 
     <div class="card">
       <div class="stats" id="summaryText">共 0 条记录，总发货 0 件</div>
+      <button onclick="deleteAllLogistics()">🗑️ 删除所有物流记录</button>
       <table>
         <thead>
           <tr><th>#</th><th>客户姓名</th><th>件数</th><th>发货日期</th><th>操作</th></tr>
@@ -258,15 +259,16 @@
   };
   
 window.deleteAllLogistics = async () => {
-  if (confirm("确定要删除所有物流记录吗？此操作不可恢复！")) {
-    const { error } = await supabase.from("logistics").delete().neq("id", "");
+  if (confirm("⚠️ 确定要删除所有物流记录吗？此操作不可恢复！")) {
+    const { error } = await supabase.from("logistics").delete().gt("shipment_count", -1);
     if (error) alert("删除失败：" + error.message);
     else {
-      alert("已删除所有记录");
+      alert("✅ 已删除所有记录");
       loadLogistics();
     }
   }
 };
+
 
 </script>
 </body>
