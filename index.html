@@ -568,7 +568,7 @@ if (!user || !user.access_token || !user.refresh_token) {
       .select('*')
       .order('created_at', { ascending: false });
     if (error) return alert('加载失败：' + error.message);
-      console.log("📦 加载的客户数据：", data);
+     
     customers = data;
     renderTable(customers);
   }
@@ -616,7 +616,7 @@ if (!user || !user.access_token || !user.refresh_token) {
         logisticsTd.innerHTML = "加载失败";
       } else {
         const totalShipmentCount = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
-        logisticsTd.innerHTML = `已发：${totalShipmentCount} 件 <button onclick="showLogistics('${cust.id}', '${cust.name}')">"📦"</button>`;
+        logisticsTd.innerHTML = `已发：${totalShipmentCount} 件 <button onclick="showLogistics('${cust.id}', '${cust.name}')">📦</button>`;
       }
     } catch (e) {
       logisticsTd.innerHTML = "异常";
