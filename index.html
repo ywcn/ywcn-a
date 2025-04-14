@@ -580,10 +580,7 @@ if (!user || !user.access_token || !user.refresh_token) {
   const tr = document.createElement("tr");
   tr.innerHTML = `
     <td>${index + 1}</td>
-    <td style="cursor:pointer; color:#007bff;"
-    onmouseenter="showLogisticsModal('${cust.id}', '${cust.name}')">
-    ${cust.name}
-</td>
+    <td> ${cust.name}</td>
     <td><a href="tel:${cust.phone}">${cust.phone}</a></td>
     <td>${cust.address}</td>
     <td>${cust.amount}</td>
@@ -1028,29 +1025,24 @@ document.querySelectorAll('.order-count-cell').forEach(cell => {
         openSupplierModal(index);
     };
 });
+const { data: logistics } = await supabase
+  .from("logistics")
+  .select("shipment_count")
+  .eq("customer_id", customer.id);
 
-  window.showLogisticsModal = function (customerId, name) {
-    const list = logisticsMap[customerId] || [];
-    document.getElementById("logisticsModalName").textContent = name;
-    const box = document.getElementById("logisticsList");
-    box.innerHTML = "";
+const total = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
 
-    if (list.length === 0) {
-      box.innerHTML = "<p>暂无物流记录</p>";
-    } else {
-      list.forEach(item => {
-        const p = document.createElement("p");
-        p.textContent = `📦 ${item.shipment_count} 件 - ${item.shipment_date}`;
-        box.appendChild(p);
-      });
-    }
+td.innerHTML = `物流记录：${total} 件 <button onclick="showLogistics(${customer.id})">查看</button>`;
+async function showLogistics(customerId) {
+  const { data } = await supabase
+    .from("logistics")
+    .select("*")
+    .eq("customer_id", customerId)
+    .order("shipment_date", { ascending: false });
 
-    document.getElementById("logisticsModal").style.display = "flex";
-  };
+  // 渲染弹窗内容
+}
 
-  window.closeLogisticsModal = function () {
-    document.getElementById("logisticsModal").style.display = "none";
-  };
 </script>
 
 </body>
