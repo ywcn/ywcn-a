@@ -109,8 +109,16 @@
 <script type="module">
   const supabase = window.supabase.createClient(
     'https://mdgczfpcturvgtxjzrfc.supabase.co',
-    '你的 Supabase 公钥（anon key）'
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'
   );
+
+  function toggleTheme() {
+  document.body.classList.toggle("dark-mode");
+  localStorage.setItem("theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
+}
+
+// 注册为全局函数
+window.toggleTheme = toggleTheme;
 
   let logisticsData = [];
 
