@@ -1,314 +1,236 @@
 <!DOCTYPE html>
 <html lang="zh">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>物流信息登记页面</title>
-<style>
-     * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            padding: 20px;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1000px;
-            /* 设置最大宽度 */
-            margin: 0 auto;
-        }
-
-        .form,
-        .filter {
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-
-        .input {
-            width: 100%;
-            max-width: 48%;
-            /* 控制输入框宽度，使其适配较小屏幕 */
-            height: 40px;
-            margin: 5px 0;
-            padding: 0 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        .submit-btn {
-            width: 100%;
-            max-width: 48%;
-            /* 控制按钮宽度 */
-            height: 40px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .submit-btn:hover {
-            background-color: #45a049;
-        }
-
-        .filter-input {
-            width: 100%;
-            max-width: 48%;
-            /* 控制筛选输入框的宽度 */
-            height: 40px;
-            margin: 5px 0;
-            padding: 0 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        .filter-btn {
-            height: 40px;
-            width: 100%;
-            max-width: 48%;
-            /* 控制筛选按钮的宽度 */
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .filter-btn:hover {
-            background-color: #45a049;
-        }
-
-        .customer-list {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: white;
-            margin-top: 20px;
-        }
-
-        .customer-list th,
-        .customer-list td {
-            padding: 10px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-
-        .customer-list th {
-            background-color: #f2f2f2;
-        }
-
-        .customer-list td input {
-            width: 60px;
-            height: 30px;
-            text-align: center;
-        }
-
-        .customer-list td button {
-            padding: 5px 10px;
-            background-color: #f44336;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .customer-list td button:hover {
-            background-color: #d32f2f;
-        }
-
-        /* 响应式设计 - 当屏幕宽度小于768px时，调整表格样式 */
-        @media (max-width: 768px) {
-
-            .customer-list th,
-            .customer-list td {
-                font-size: 12px;
-                padding: 8px;
-            }
-
-            .customer-list td input {
-                width: 100%;
-                /* 让输入框宽度填满单元格 */
-            }
-
-            .input,
-            .submit-btn,
-            .filter-input,
-            .filter-btn {
-                width: 100%;
-                /* 让表单元素宽度适应手机屏幕 */
-                max-width: 100%;
-                /* 确保输入框宽度填充容器 */
-            }
-            .iptData{
-            width:100%
-            }
-            .form {
-                flex-direction: column;
-            }
-        }
-
-        /* 更小屏幕时调整输入框大小 */
-        @media (max-width: 480px) {
-
-            .input,
-            .submit-btn,
-            .filter-input,
-            .filter-btn {
-                height: 35px;
-            }
-            .iptData{
-            width:100%
-            }
-            .customer-list td input {
-                height: 25px;
-            }
-
-            .customer-list td button {
-                font-size: 12px;
-                padding: 4px 8px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>物流管理系统</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg-color: #fff;
+      --text-color: #000;
+      --primary-color: #4a90e2;
+    }
+    body.dark-mode {
+      --bg-color: #1e1e1e;
+      --text-color: #fff;
+      --primary-color: #007acc;
+    }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .container { max-width: 1000px; margin: auto; }
+    h1 { text-align: center; }
+    .card {
+      background: var(--bg-color);
+      border: 1px solid #ccc;
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .form-group { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+    .form-group label { width: 100px; text-align: right; }
+    .form-group input, .form-group select {
+      flex: 1; padding: 6px; border-radius: 5px; border: 1px solid #ccc;
+    }
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 5px;
+      background-color: var(--primary-color);
+      color: white;
+      cursor: pointer;
+    }
+    button:hover { background-color: #357ab8; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    th { background: #f2f2f2; }
+    .theme-toggle { position: absolute; top: 10px; right: 20px; cursor: pointer; }
+    .stats { font-weight: bold; margin-bottom: 10px; }
+  </style>
 </head>
-
 <body>
-    <div class="container">
-        <!-- 表单区域 -->
-        <form id="shippingForm" class="form">
-            <input type="text" id="customerName" placeholder="客户姓名" class="input">
-            <input type="number" id="shipmentCount" placeholder="发货件数" class="input">
-            <input type="date" id="shipmentDate" class="input iptData">
-            <button type="submit" class="submit-btn">提交</button>
-            
-        </form>
+  <div class="theme-toggle" onclick="toggleTheme()">🌓 切换模式</div>
+  <div class="container">
+    <h1>📦 物流信息管理</h1>
 
-        <!-- 筛选区域 -->
-        <div class="filter">
-            <input type="date" id="filterDate" class="filter-input iptData">
-            <button onclick="filterData()" class="filter-btn">筛选</button>
-        </div>
-        <div><button type="button" onclick="deleteAllCustomers()" class="submit-btn">删除所有客户</button></div>
-        <!-- 客户列表 -->
-        <table id="customerList" class="customer-list">
-            <thead>
-                <tr>
-                    <th>序号</th>
-                    <th>客户姓名</th>
-                    <th>发货件数</th>
-                    <th>发货日期</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="3">合计件数</td>
-                    <td id="totalCount">0</td>
-                </tr>
-            </tfoot>
-        </table>
+    <div class="card">
+      <div class="form-group">
+        <label>客户搜索：</label>
+        <input type="text" id="searchName" placeholder="输入客户名关键词" />
+        <label>起始日期：</label>
+        <input type="date" id="startDate" />
+        <label>截止日期：</label>
+        <input type="date" id="endDate" />
+        <button onclick="filterLogistics()">筛选</button>
+        <button onclick="resetFilter()">重置</button>
+      </div>
     </div>
 
-    
+    <div class="card">
+      <form id="shippingForm">
+        <div class="form-group">
+          <label>客户姓名：</label><input type="text" id="customerName" required />
+          <label>件数：</label><input type="number" id="shipmentCount" required />
+          <label>发货日期：</label><input type="date" id="shipmentDate" required />
+          <button type="submit">添加</button>
+        </div>
+      </form>
+      <div class="form-group">
+        <label>批量导入：</label>
+        <input type="file" id="importFile" accept=".xlsx" />
+        <button onclick="importFromExcel()">导入</button>
+        <button onclick="exportToExcel()">导出</button>
+      </div>
+    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <div class="card">
+      <div class="stats" id="summaryText">共 0 条记录，总发货 0 件</div>
+      <table>
+        <thead>
+          <tr><th>#</th><th>客户姓名</th><th>件数</th><th>发货日期</th><th>操作</th></tr>
+        </thead>
+        <tbody id="logisticsTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
 <script type="module">
-  const supabase = supabase.createClient(
+  const supabase = window.supabase.createClient(
     'https://mdgczfpcturvgtxjzrfc.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1kZ2N6ZnBjdHVydmd0eGp6cmZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM5OTgzMDMsImV4cCI6MjA1OTU3NDMwM30.5hBnXg0N3y-yhL7Ymm6AKFsatho2EsGSf_Fqfr61uKc'
+    '你的 Supabase 公钥（anon key）'
   );
 
   let logisticsData = [];
 
   async function loadLogistics() {
-    const { data, error } = await supabase.from("logistics").select("*").order("shipment_date", { ascending: false });
-    if (error) {
-      alert("加载失败：" + error.message);
-      return;
-    }
-    logisticsData = data;
+    const { data } = await supabase.from("logistics").select("*").order("shipment_date", { ascending: false });
+    logisticsData = data || [];
     renderTable(logisticsData);
   }
 
-  async function addLogistics(e) {
+  function renderTable(data) {
+    const tbody = document.getElementById("logisticsTableBody");
+    const summary = document.getElementById("summaryText");
+    tbody.innerHTML = "";
+    let total = 0;
+    data.forEach((item, i) => {
+      total += item.shipment_count;
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${item.customer_name}</td>
+        <td>${item.shipment_count}</td>
+        <td>${item.shipment_date}</td>
+        <td>
+          <button onclick="editRecord('${item.id}')">编辑</button>
+          <button onclick="deleteRecord('${item.id}')">删除</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+    summary.textContent = `共 ${data.length} 条记录，总发货 ${total} 件`;
+  }
+
+  document.getElementById("shippingForm").addEventListener("submit", async e => {
     e.preventDefault();
     const name = document.getElementById("customerName").value.trim();
     const count = parseInt(document.getElementById("shipmentCount").value);
     const date = document.getElementById("shipmentDate").value;
-
-    if (!name || !count || !date) return alert("请填写完整的表单！");
-
-    const { error } = await supabase.from("logistics").insert([{
-      customer_name: name,
-      shipment_count: count,
-      shipment_date: date
-    }]);
-
-    if (error) return alert("提交失败：" + error.message);
-
-    document.getElementById("shippingForm").reset();
+    if (!name || !count || !date) return alert("请填写完整");
+    await supabase.from("logistics").insert([{ customer_name: name, shipment_count: count, shipment_date: date }]);
+    e.target.reset();
     loadLogistics();
-  }
+  });
 
-  async function deleteLogistics(index) {
-    const item = logisticsData[index];
-    const { error } = await supabase.from("logistics").delete().eq("id", item.id);
-    if (error) return alert("删除失败：" + error.message);
-    loadLogistics();
-  }
+  window.importFromExcel = async function () {
+    const file = document.getElementById("importFile").files[0];
+    if (!file) return alert("请选择文件");
+    const reader = new FileReader();
+    reader.onload = async e => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sheet);
+      const rows = json.map(r => ({
+        customer_name: r.customer_name,
+        shipment_count: parseInt(r.shipment_count),
+        shipment_date: r.shipment_date
+      })).filter(r => r.customer_name && r.shipment_count && r.shipment_date);
+      await supabase.from("logistics").insert(rows);
+      alert("导入成功：" + rows.length + " 条");
+      loadLogistics();
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
-  async function deleteAllCustomers() {
-    if (confirm("您确定要删除所有客户记录吗？")) {
-      const { error } = await supabase.from("logistics").delete().not("id", "is", null);
-      if (error) return alert("删除失败：" + error.message);
+  window.exportToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(logisticsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Logistics");
+    XLSX.writeFile(wb, "logistics_export.xlsx");
+  };
+
+  window.deleteRecord = async id => {
+    if (confirm("确定删除这条记录？")) {
+      await supabase.from("logistics").delete().eq("id", id);
       loadLogistics();
     }
-  }
+  };
 
-  function renderTable(data) {
-    const tbody = document.querySelector("#customerList tbody");
-    tbody.innerHTML = "";
-    let total = 0;
+  window.editRecord = async id => {
+    const record = logisticsData.find(r => r.id === id);
+    const name = prompt("客户姓名：", record.customer_name);
+    const count = prompt("件数：", record.shipment_count);
+    const date = prompt("发货日期：", record.shipment_date);
+    if (name && count && date) {
+      await supabase.from("logistics").update({
+        customer_name: name,
+        shipment_count: parseInt(count),
+        shipment_date: date
+      }).eq("id", id);
+      loadLogistics();
+    }
+  };
 
-    data.forEach((row, index) => {
-      total += row.shipment_count;
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${index + 1}</td>
-        <td>${row.customer_name}</td>
-        <td>${row.shipment_count}</td>
-        <td>${row.shipment_date}</td>
-        <td><button onclick="deleteLogistics(${index})">删除</button></td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    document.getElementById("totalCount").textContent = total;
-  }
-
-  function filterData() {
-    const date = document.getElementById("filterDate").value;
-    if (!date) return renderTable(logisticsData);
-    const filtered = logisticsData.filter(d => d.shipment_date === date);
+  window.filterLogistics = () => {
+    const name = document.getElementById("searchName").value.trim();
+    const start = document.getElementById("startDate").value;
+    const end = document.getElementById("endDate").value;
+    const filtered = logisticsData.filter(r =>
+      (!name || r.customer_name.includes(name)) &&
+      (!start || r.shipment_date >= start) &&
+      (!end || r.shipment_date <= end)
+    );
     renderTable(filtered);
+  };
+
+  window.resetFilter = () => {
+    document.getElementById("searchName").value = "";
+    document.getElementById("startDate").value = "";
+    document.getElementById("endDate").value = "";
+    renderTable(logisticsData);
+  };
+
+  function toggleTheme() {
+    document.body.classList.toggle("dark-mode");
+    localStorage.setItem("theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
+  window.onload = () => {
+    if (localStorage.getItem("theme") === "dark") document.body.classList.add("dark-mode");
     loadLogistics();
-    document.getElementById("shippingForm").addEventListener("submit", addLogistics);
-  });
+  };
 </script>
-
 </body>
-
 </html>
