@@ -193,6 +193,7 @@
   }
   return dateNumber; // 如果已经是字符串就直接返回
 }
+localStorage.setItem("refresh_logistics", Date.now());
 
   window.exportToExcel = () => {
     const ws = XLSX.utils.json_to_sheet(logisticsData);
