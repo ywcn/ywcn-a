@@ -600,7 +600,23 @@ if (!user || !user.access_token || !user.refresh_token) {
   tbody.appendChild(tr);
 });
 }
-  
+  window.addEventListener("storage", async (e) => {
+  if (e.key === "refresh_logistics") {
+    console.log("📦 检测到物流更新，自动刷新客户表");
+
+    const { data, error } = await supabaseClient
+      .from("customers")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) return alert("刷新失败：" + error.message);
+
+    customers = data;
+    
+    renderTable(customers);
+  }
+});
+
   function loadCustomerToForm(index) {
     const cust = customers[index];
     currentEditId = cust.id;
@@ -615,7 +631,7 @@ if (!user || !user.access_token || !user.refresh_token) {
     document.getElementById("delivery_time").value = cust.delivery_time?.split('T')[0] || '';
     document.getElementById("addCustomerBtn").textContent = "更新";
   }
-
+   
   function clearForm() {
     document.getElementById("name").value = '';
     document.getElementById("phone").value = '';
