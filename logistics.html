@@ -58,7 +58,8 @@
     }
     th { background: #f2f2f2; }
     .theme-toggle { position: absolute; top: 10px; right: 20px; cursor: pointer; }
-    .stats { font-weight: bold; margin-bottom: 10px; }
+    .stats { font-weight: bold; margin-bottom: 10px; po}
+    .deleteAll-btn{position: absolute;right:0px;}
   </style>
 </head>
 <body>
@@ -98,11 +99,11 @@
 
 
     <div class="card">
-      <div class="stats" id="summaryText">共 0 条记录，总发货 0 件</div>
-      <button onclick="deleteAllLogistics()">🗑️ 删除所有物流记录</button>
+      <div class="stats" id="summaryText">共 0 条记录，总发货 0 件<button class="deleteAll-btn" onclick="deleteAllLogistics()">🗑️ 删除所有物流记录</button></div>
+      
       <table>
         <thead>
-          <tr><th>#</th><th>客户姓名</th><th>件数</th><th>发货日期</th><th>操作</th></tr>
+          <tr><th>NO.</th><th>客户姓名</th><th>件数</th><th>发货日期</th><th>操作</th></tr>
         </thead>
         <tbody id="logisticsTableBody"></tbody>
       </table>
