@@ -567,64 +567,67 @@ if (!user || !user.access_token || !user.refresh_token) {
       .select('*')
       .order('created_at', { ascending: false });
     if (error) return alert('加载失败：' + error.message);
+      console.log("📦 加载的客户数据：", data);
     customers = data;
     renderTable(customers);
   }
   //渲染页面
-  function renderTable(dataArray) {
-    const tbody = document.getElementById("customerTableBody");
-    tbody.innerHTML = "";
-    let total = 0;
+  async function renderTable(dataArray) {
+  const tbody = document.getElementById("customerTableBody");
+  tbody.innerHTML = "";
+  let total = 0;
 
-    dataArray.forEach(async (cust, index) => {
-  const tr = document.createElement("tr");
+  for (let index = 0; index < dataArray.length; index++) {
+    const cust = dataArray[index];
+    const tr = document.createElement("tr");
 
-  // 基本的客户信息行
-  tr.innerHTML = `
-    <td>${index + 1}</td>
-    <td>${cust.name}</td>
-    <td><a href="tel:${cust.phone}">${cust.phone}</a></td>
-    <td>${cust.address}</td>
-    <td>${cust.amount}</td>
-    <td>${cust.customer_service || ''}</td>
-    <td>${cust.note || ''}</td>
-    <td>${cust.delivery_time?.split('T')[0] || ''}</td>
-    <td>
-      <button class="btn-edit" onclick="loadCustomerToForm(${index})">编辑</button>
-      <button class="btn-delete" onclick="deleteCustomer(${index})">删除</button>
-    </td>
-    <td class="order-count" data-customer-id="${cust.id}" onclick="openSupplierModal(${index})">
-      已回货${cust.delivered_count || 0} / 未回货${cust.not_delivered_count || 0}
-    </td>
-  `;
+    tr.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${cust.name}</td>
+      <td><a href="tel:${cust.phone}">${cust.phone}</a></td>
+      <td>${cust.address}</td>
+      <td>${cust.amount}</td>
+      <td>${cust.customer_service || ''}</td>
+      <td>${cust.note || ''}</td>
+      <td>${cust.delivery_time?.split('T')[0] || ''}</td>
+      <td>
+        <button class="btn-edit" onclick="loadCustomerToForm(${index})">编辑</button>
+        <button class="btn-delete" onclick="deleteCustomer(${index})">删除</button>
+      </td>
+      <td class="order-count" data-customer-id="${cust.id}" onclick="openSupplierModal(${index})">
+        已回货${cust.delivered_count || 0} / 未回货${cust.not_delivered_count || 0}
+      </td>
+    `;
 
-  // 创建物流信息的 TD，并添加到行中
-  const logisticsTd = document.createElement("td");
-  logisticsTd.innerHTML = `加载中...`;
-  tr.appendChild(logisticsTd);
+    // 创建物流信息的 TD，并添加到行中
+    const logisticsTd = document.createElement("td");
+    logisticsTd.innerHTML = "加载中...";
+    tr.appendChild(logisticsTd);
 
-  // 从 Supabase 获取物流数据
-  const { data: logistics, error } = await supabaseClient
-    .from("logistics")
-    .select("shipment_count")
-    .eq("customer_id", cust.id);
+    try {
+      const { data: logistics, error } = await supabaseClient
+        .from("logistics")
+        .select("shipment_count")
+        .eq("customer_id", cust.id);
 
-  if (error) {
-    console.error("获取物流数据出错:", error);
-    logisticsTd.innerHTML = "加载失败";
-  } else {
-    const totalShipmentCount = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
-    logisticsTd.innerHTML = `物流：${totalShipmentCount} 件 
-      <button onclick="showLogistics('${cust.id}', '${cust.name}')">查看</button>`;
+      if (error) {
+        console.error("获取物流数据出错:", error);
+        logisticsTd.innerHTML = "加载失败";
+      } else {
+        const totalShipmentCount = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
+        logisticsTd.innerHTML = `物流：${totalShipmentCount} 件 <button onclick="showLogistics('${cust.id}', '${cust.name}')">查看</button>`;
+      }
+    } catch (e) {
+      logisticsTd.innerHTML = "异常";
+    }
+
+    total += parseFloat(cust.amount || 0);
+    tbody.appendChild(tr);
   }
 
-  // 更新合计金额
-  total += parseFloat(cust.amount || 0);
   document.getElementById("totalAmount").textContent = `合计金额：${total.toFixed(2)}`;
+}
 
-  // 将行添加到表格中
-  tbody.appendChild(tr);
-});
 
   function loadCustomerToForm(index) {
     const cust = customers[index];
