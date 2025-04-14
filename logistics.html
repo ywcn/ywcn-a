@@ -101,7 +101,11 @@
 
 
     <div class="card">
-      <div class="stats" id="summaryText">共 0 条记录，总发货 0 件<button class="deleteAll-btn" onclick="deleteAllLogistics()">🗑️ 删除所有物流记录</button></div>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+  <div class="stats" id="summaryText">共 0 条记录，总发货 0 件</div>
+  <button onclick="deleteAllLogistics()" style="background: #e74c3c;">🗑️ 删除所有物流记录</button>
+</div>
+
       
       <table>
         <thead>
