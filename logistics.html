@@ -214,17 +214,24 @@
     }
   };
 
-  window.filterLogistics = () => {
-    const name = document.getElementById("searchName").value.trim();
-    const start = document.getElementById("startDate").value;
-    const end = document.getElementById("endDate").value;
-    const filtered = logisticsData.filter(r =>
-      (!name || r.customer_name.includes(name)) &&
-      (!start || r.shipment_date >= start) &&
-      (!end || r.shipment_date <= end)
-    );
-    renderTable(filtered);
-  };
+ window.filterLogistics = () => {
+  const name = document.getElementById("searchName").value.trim().toLowerCase();
+  const start = document.getElementById("startDate").value;
+  const end = document.getElementById("endDate").value;
+
+  const filtered = logisticsData.filter(r =>
+    (!name || r.customer_name.toLowerCase().includes(name)) &&
+    (!start || r.shipment_date >= start) &&
+    (!end || r.shipment_date <= end)
+  );
+
+  renderTable(filtered);
+};
+
+  document.getElementById("searchName").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") filterLogistics();
+});
+
 
   window.resetFilter = () => {
     document.getElementById("searchName").value = "";
@@ -232,7 +239,7 @@
     document.getElementById("endDate").value = "";
     renderTable(logisticsData);
   };
-
+  
   function toggleTheme() {
     document.body.classList.toggle("dark-mode");
     localStorage.setItem("theme", document.body.classList.contains("dark-mode") ? "dark" : "light");
