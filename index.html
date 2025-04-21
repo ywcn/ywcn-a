@@ -477,7 +477,7 @@ h1 {
                 <th>物流</th>
             </tr>
         </thead>
-        <tbody id="customerTableBody"></tbody>
+        <tbody id="customercustomerTableBody"></tbody>
     </table>
 
     <!-- 密码修改弹窗 -->
@@ -606,8 +606,8 @@ if (!user || !user.access_token || !user.refresh_token) {
 
   //渲染页面
  function renderTable(customers, logisticsMap) {
-  const tableBody = document.getElementById("tableBody");
-  tableBody.innerHTML = "";
+  const customerTableBody = document.getElementById("customerTableBody");
+  customerTableBody.innerHTML = "";
 
   let totalAmount = 0;
 
@@ -635,7 +635,7 @@ if (!user || !user.access_token || !user.refresh_token) {
         <button onclick="deleteCustomer('${cust.id}')">删除</button>
       </td>
     `;
-    tableBody.appendChild(row);
+    customerTableBody.appendChild(row);
   });
 
   // 更新合计金额
