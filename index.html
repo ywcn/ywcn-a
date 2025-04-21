@@ -479,7 +479,17 @@ h1 {
         </thead>
         <tbody id="customerTableBody"></tbody>
     </table>
-
+    <!-- ✅ 添加分页控制区域 + 每页数量选择 -->
+<div style="text-align: center; margin: 20px auto;">
+  每页显示：
+  <select onchange="handlePageSizeChange(this.value)">
+    <option value="5">5 条</option>
+    <option value="10" selected>10 条</option>
+    <option value="20">20 条</option>
+    <option value="50">50 条</option>
+  </select>
+</div>
+<div id="pagination" style="text-align:center; margin-bottom: 20px;"></div>
     <!-- 密码修改弹窗 -->
     <div id="passwordModal" class="modal" style="display:none;">
         <div class="modal-content">
@@ -558,77 +568,121 @@ if (!user || !user.access_token || !user.refresh_token) {
 }
 
 
-  let customers = [];
+
   let currentEditId = null;
   let currentCustomerIndex = null;
+  let customers = [];
+  let currentPage = 1;
+  let pageSize = 10;
+  let logisticsMap = {};
 
   async function loadData() {
-    const { data, error } = await supabaseClient
-        .from('customers')
-        .select('*')
-        .order('created_at', { ascending: false });
-    if (error) return alert('加载失败：' + error.message);
+  const { data: allCustomers, error: customerError } = await supabaseClient
+    .from("customers")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-    customers = data;
-    renderTable(customers);
-}
+  const { data: logisticsData, error: logisticsError } = await supabaseClient
+    .from("logistics")
+    .select("customer_id, shipment_count");
+
+  if (customerError || logisticsError) {
+    alert("加载失败" + (customerError?.message || logisticsError?.message));
+    return;
+  }
+
+  logisticsMap = {};
+  for (const l of logisticsData) {
+    logisticsMap[l.customer_id] = (logisticsMap[l.customer_id] || 0) + l.shipment_count;
+  }
+
+
 //渲染页面
-async function renderTable(dataArray) {
-    const tbody = document.getElementById("customerTableBody");
-    tbody.innerHTML = "";
-    let total = 0;
+function renderTable() {
+  const tbody = document.getElementById("customerTableBody");
+  tbody.innerHTML = "";
+  let totalAmount = 0;
 
-    for (let index = 0; index < dataArray.length; index++) {
-        const cust = dataArray[index];
-        const tr = document.createElement("tr");
+  const start = (currentPage - 1) * pageSize;
+  const end = start + pageSize;
+  const pageData = customers.slice(start, end);
 
-        tr.innerHTML = `
-      <td>${index + 1}</td>
+  pageData.forEach((cust, index) => {
+    const tr = document.createElement("tr");
+    const shipmentCount = logisticsMap[cust.id] || 0;
+    totalAmount += parseFloat(cust.amount || 0);
+
+    tr.innerHTML = `
+      <td>${start + index + 1}</td>
       <td>${cust.name}</td>
       <td><a href="tel:${cust.phone}">${cust.phone}</a></td>
       <td>${cust.address}</td>
       <td>${cust.amount}</td>
-      <td>${cust.customer_service || ''}</td>
-      <td>${cust.note || ''}</td>
-      <td>${cust.delivery_time?.split('T')[0] || ''}</td>
+      <td>${cust.customer_service || ""}</td>
+      <td>${cust.note || ""}</td>
+      <td>${cust.delivery_time?.split("T")[0] || ""}</td>
       <td>
-        <button class="btn-edit" onclick="loadCustomerToForm(${index})">编辑</button>
-        <button class="btn-delete" onclick="deleteCustomer(${index})">删除</button>
+        <button class="btn-edit" onclick="loadCustomerToForm(${start + index})">编辑</button>
+        <button class="btn-delete" onclick="deleteCustomer(${start + index})">删除</button>
       </td>
-      <td class="order-count" data-customer-id="${cust.id}" onclick="openSupplierModal(${index})">
+      <td class="order-count" data-customer-id="${cust.id}" onclick="openSupplierModal(${start + index})">
         已回货${cust.delivered_count || 0} / 未回货${cust.not_delivered_count || 0}
       </td>
+      <td>
+        已发：${shipmentCount} 件
+        <button onclick="showLogistics('${cust.id}', '${cust.name}')">📦</button>
+      </td>
     `;
+    tbody.appendChild(tr);
+  });
 
-        // 创建物流信息的 TD，并添加到行中
-        const logisticsTd = document.createElement("td");
-        logisticsTd.innerHTML = "加载中...";
-        tr.appendChild(logisticsTd);
-
-        try {
-            const { data: logistics, error } = await supabaseClient
-                .from("logistics")
-                .select("shipment_count")
-                .eq("customer_id", cust.id);
-
-            if (error) {
-                console.error("获取物流数据出错:", error);
-                logisticsTd.innerHTML = "加载失败";
-            } else {
-                const totalShipmentCount = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
-                logisticsTd.innerHTML = `已发：${totalShipmentCount} 件 <button onclick="showLogistics('${cust.id}', '${cust.name}')">📦</button>`;
-            }
-        } catch (e) {
-            logisticsTd.innerHTML = "异常";
-        }
-
-        total += parseFloat(cust.amount || 0);
-        tbody.appendChild(tr);
-    }
-
-    document.getElementById("totalAmount").textContent = `合计金额：${total.toFixed(2)}`;
+  document.getElementById("totalAmount").textContent = `合计金额：${totalAmount.toFixed(2)}`;
 }
 
+function renderPagination() {
+  const totalPages = Math.ceil(customers.length / pageSize);
+  const pagination = document.getElementById("pagination");
+  pagination.innerHTML = "";
+
+  const prevBtn = document.createElement("button");
+  prevBtn.textContent = "← 上一页";
+  prevBtn.disabled = currentPage === 1;
+  prevBtn.onclick = () => {
+    currentPage--;
+    renderTable();
+    renderPagination();
+  };
+  pagination.appendChild(prevBtn);
+
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    btn.className = i === currentPage ? "btn btn-add" : "btn";
+    btn.onclick = () => {
+      currentPage = i;
+      renderTable();
+      renderPagination();
+    };
+    pagination.appendChild(btn);
+  }
+
+  const nextBtn = document.createElement("button");
+  nextBtn.textContent = "下一页 →";
+  nextBtn.disabled = currentPage === totalPages;
+  nextBtn.onclick = () => {
+    currentPage++;
+    renderTable();
+    renderPagination();
+  };
+  pagination.appendChild(nextBtn);
+}
+
+function handlePageSizeChange(value) {
+  pageSize = parseInt(value);
+  currentPage = 1;
+  renderTable();
+  renderPagination();
+}
 
   function loadCustomerToForm(index) {
     const cust = customers[index];
