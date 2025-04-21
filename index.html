@@ -595,7 +595,11 @@ if (!user || !user.access_token || !user.refresh_token) {
   for (const l of logisticsData) {
     logisticsMap[l.customer_id] = (logisticsMap[l.customer_id] || 0) + l.shipment_count;
   }
-
+  customers = allCustomers;
+  currentPage = 1;
+  renderTable();
+  renderPagination();
+}
 
 //渲染页面
 function renderTable() {
