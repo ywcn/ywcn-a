@@ -563,83 +563,70 @@ if (!user || !user.access_token || !user.refresh_token) {
   let currentCustomerIndex = null;
 
   async function loadData() {
-  // 获取客户数据
-  const { data: customers, error: customerError } = await supabaseClient
-    .from("customers")
-    .select("*")
-    .order("created_at", { ascending: false });
+    const { data, error } = await supabaseClient
+        .from('customers')
+        .select('*')
+        .order('created_at', { ascending: false });
+    if (error) return alert('加载失败：' + error.message);
 
-  if (customerError) {
-    console.error("获取客户失败", customerError);
-    return;
-  }
-
-  // 获取所有物流数据（仅 customer_id 和 shipment_count）
-  const { data: logistics, error: logisticsError } = await supabaseClient
-    .from("logistics")
-    .select("customer_id, shipment_count");
-
-  if (logisticsError) {
-    console.error("获取物流失败", logisticsError);
-    return;
-  }
-
-  // 整理物流信息为映射表：customer_id -> 总发货件数
-  const logisticsMap = {};
-  for (const log of logistics || []) {
-    logisticsMap[log.customer_id] = (logisticsMap[log.customer_id] || 0) + log.shipment_count;
-  }
-
-  // 客户去重（按 name + phone）
-  const uniqueMap = new Map();
-  for (const cust of customers) {
-    const key = `${cust.name}_${cust.phone}`;
-    if (!uniqueMap.has(key)) {
-      uniqueMap.set(key, cust);
-    }
-  }
-  const uniqueCustomers = Array.from(uniqueMap.values());
-
-  // 渲染表格
-  renderTable(uniqueCustomers, logisticsMap);
+    customers = data;
+    renderTable(customers);
 }
+//渲染页面
+async function renderTable(dataArray) {
+    const tbody = document.getElementById("customerTableBody");
+    tbody.innerHTML = "";
+    let total = 0;
 
-  //渲染页面
- function renderTable(customers, logisticsMap) {
-  const customerTableBody = document.getElementById("customerTableBody");
-  customerTableBody.innerHTML = "";
+    for (let index = 0; index < dataArray.length; index++) {
+        const cust = dataArray[index];
+        const tr = document.createElement("tr");
 
-  let totalAmount = 0;
-
-  customers.forEach((cust, index) => {
-    const shipmentCount = logisticsMap[cust.id] || 0;
-    totalAmount += parseFloat(cust.amount || 0);
-
-    const row = document.createElement("tr");
-    row.innerHTML = `
+        tr.innerHTML = `
       <td>${index + 1}</td>
       <td>${cust.name}</td>
       <td><a href="tel:${cust.phone}">${cust.phone}</a></td>
       <td>${cust.address}</td>
       <td>${cust.amount}</td>
-      <td>${cust.customer_service || ""}</td>
-      <td>${cust.note || ""}</td>
-      <td>${cust.created_at?.split("T")[0]}</td>
-      <td>已回货0 / 未回货0</td>
+      <td>${cust.customer_service || ''}</td>
+      <td>${cust.note || ''}</td>
+      <td>${cust.delivery_time?.split('T')[0] || ''}</td>
       <td>
-        已发：${shipmentCount}件
-        <button onclick="viewLogistics('${cust.id}')">📦</button>
+        <button class="btn-edit" onclick="loadCustomerToForm(${index})">编辑</button>
+        <button class="btn-delete" onclick="deleteCustomer(${index})">删除</button>
       </td>
-      <td>
-        <button onclick="editCustomer('${cust.id}')">编辑</button>
-        <button onclick="deleteCustomer('${cust.id}')">删除</button>
+      <td class="order-count" data-customer-id="${cust.id}" onclick="openSupplierModal(${index})">
+        已回货${cust.delivered_count || 0} / 未回货${cust.not_delivered_count || 0}
       </td>
     `;
-    customerTableBody.appendChild(row);
-  });
 
-  // 更新合计金额
-  document.getElementById("totalAmount").textContent = totalAmount.toFixed(2);
+        // 创建物流信息的 TD，并添加到行中
+        const logisticsTd = document.createElement("td");
+        logisticsTd.innerHTML = "加载中...";
+        tr.appendChild(logisticsTd);
+
+        try {
+            const { data: logistics, error } = await supabaseClient
+                .from("logistics")
+                .select("shipment_count")
+                .eq("customer_id", cust.id);
+
+            if (error) {
+                console.error("获取物流数据出错:", error);
+                logisticsTd.innerHTML = "加载失败";
+            } else {
+                const totalShipmentCount = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
+                logisticsTd.innerHTML = `已发：${totalShipmentCount} 件 <button onclick="showLogistics('${cust.id}', '${cust.name}')">📦</button>`;
+            }
+        } catch (e) {
+            logisticsTd.innerHTML = "异常";
+        }
+
+        total += parseFloat(cust.amount || 0);
+        tbody.appendChild(tr);
+    }
+
+    document.getElementById("totalAmount").textContent = `合计金额：${total.toFixed(2)}`;
 }
 
 
