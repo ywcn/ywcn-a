@@ -367,6 +367,15 @@ h1 {
     display:flex;
     flex-direction: row;
 }
+        .summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: bold;
+  color: #d9534f;
+  margin: 0 10px;
+}
+
     </style>
 </head>
 
@@ -467,14 +476,19 @@ h1 {
         <button id="filterBtn">筛选</button>
         <button id="clearFilterBtn">清除筛选</button>
         <button id="exportBtn">导出当前视图</button>
-        <!-- 金额汇总 + 一键删除 -->
-        <div class="summary" id="totalAmount">
-            <label>合计类型：</label>
-            <select id="totalMode">
-            <option value="all">全部合计</option>
-            <option value="page">当前页合计</option>
-           </select>
-        </div>
+        
+        <!-- 合计类型选择器 -->
+       <div class="summary">
+      <label>合计类型：</label>
+      <select id="totalMode">
+      <option value="all">总计</option>
+     <option value="page">分页合计</option>
+     </select>
+     </div>
+
+     <!-- 合计金额展示（纯文本） -->
+     <div class="summary" id="totalAmount">合计金额：0.00</div>
+
        
         <button id="deleteAllBtn" class="btn-delete">删除所有信息</button>
 <a href="logistics.html" target="_blank" style="color:blue; text-decoration:underline;">进入物流登记页面 ➤</a>
