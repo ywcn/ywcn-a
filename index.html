@@ -381,6 +381,39 @@ h1 {
     border: none;
     border-bottom: 1px solid #000;
 }
+        @media screen and (max-width: 768px) {
+  .mobile-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: var(--primary-color);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 6px 0;
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.2);
+    z-index: 999;
+  }
+
+  .mobile-footer button {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .mobile-footer button span {
+    font-size: 18px;
+  }
+
+  body {
+    padding-bottom: 60px; /* 为底栏留出空间 */
+  }
+}
     </style>
 </head>
 
@@ -573,6 +606,25 @@ h1 {
     <div id="logisticsList"></div>
     <button onclick="closeLogisticsModal()" style="margin-top: 10px;" class="btn-delete">关闭</button>
   </div>
+</div>
+    <!-- ✅ 添加 HTML 底部栏 -->
+<div class="mobile-footer" style="display: none;">
+  <button onclick="document.getElementById('pasteInput').focus()">
+    <span>📋</span>
+    粘贴
+  </button>
+  <button onclick="document.getElementById('addCustomerBtn').click()">
+    <span>➕</span>
+    添加
+  </button>
+  <button onclick="document.getElementById('searchName').focus()">
+    <span>🔍</span>
+    搜索
+  </button>
+  <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+    <span>⬆️</span>
+    顶部
+  </button>
 </div>
     <script>
   const supabaseClient = supabase.createClient(
@@ -1258,7 +1310,12 @@ document.getElementById("exportBtn")
 flatpickr("#startDate", { dateFormat: "Y-m-d", allowInput: true });
 flatpickr("#endDate",   { dateFormat: "Y-m-d", allowInput: true });
 flatpickr("#delivery_time", { dateFormat: "Y-m-d" });
-
+// 显示底部导航栏仅在移动端激活
+window.addEventListener("load", () => {
+  if (window.innerWidth <= 768) {
+    document.querySelector(".mobile-footer").style.display = "flex";
+  }
+});
 </script>
 
 
