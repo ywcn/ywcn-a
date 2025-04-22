@@ -5,9 +5,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>客户信息登记</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="icon" href="./img/恐龙.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
        :root {
     --bg-color: #fff;
@@ -465,10 +466,18 @@ h1 {
         <button id="filterBtn">筛选</button>
         <button id="clearFilterBtn">清除筛选</button>
         <!-- 金额汇总 + 一键删除 -->
-        <div class="summary" id="totalAmount">合计金额：0</div>
+        <div class="summary" id="totalAmount">
+            <label>合计类型：</label>
+            <select id="totalMode">
+            <option value="all">全部合计</option>
+            <option value="page">当前页合计</option>
+           </select>
+        </div>
+        <button id="exportBtn">导出当前视图</button>
         <button id="deleteAllBtn" class="btn-delete">删除所有信息</button>
 <a href="logistics.html" target="_blank" style="color:blue; text-decoration:underline;">进入物流登记页面 ➤</a>
     </div>
+     <div id="loadingOverlay" style="display:none; text-align:center; padding:20px;">⏳ 正在加载…</div>
 
     <!-- 客户列表 -->
     <table>
@@ -583,11 +592,19 @@ if (!user || !user.access_token || !user.refresh_token) {
   let currentEditId = null;
   let currentCustomerIndex = null;
   let customers = [];
+  let displayedCustomers = [];  // 当前要展示（分页）的数据
   let currentPage = 1;
   let pageSize = 10;
   let logisticsMap = {};
 
+function showLoading() {
+  document.getElementById("loadingOverlay").style.display = "block";
+}
+function hideLoading() {
+  document.getElementById("loadingOverlay").style.display = "none";
+}
   async function loadData() {
+  showLoading();
   const { data: allCustomers, error: customerError } = await supabaseClient
     .from("customers")
     .select("*")
@@ -607,16 +624,39 @@ if (!user || !user.access_token || !user.refresh_token) {
     logisticsMap[l.customer_id] = (logisticsMap[l.customer_id] || 0) + l.shipment_count;
   }
   customers = allCustomers;
+  displayedCustomers = customers.slice();  // 初始时未过滤
   currentPage = 1;
   renderTable();
   renderPagination();
 }
-
+document.getElementById("totalMode")
+        .addEventListener("change", renderTable);
 //渲染页面
 function renderTable() {
   const tbody = document.getElementById("customerTableBody");
   tbody.innerHTML = "";
-  let totalAmount = 0;
+  if (displayedCustomers.length === 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="11">暂无符合条件的记录</td>`;
+    tbody.appendChild(tr);
+    return;
+  }  
+  // 计算总金额：基于 displayedCustomers，而不是当前页
+  const totalAmount = displayedCustomers
+    .reduce((sum, c) => sum + parseFloat(c.amount || 0), 0)
+    .toFixed(2);
+  document.getElementById("totalAmount").textContent = `合计金额：${totalAmount}`;
+   const mode = document.getElementById("totalMode").value;
+  let total;
+  if (mode === "page") {
+    const start = (currentPage - 1) * pageSize;
+    const pageData = displayedCustomers.slice(start, start + pageSize);
+    total = pageData.reduce((s,c)=>s+parseFloat(c.amount||0),0);
+  } else {
+    total = displayedCustomers.reduce((s,c)=>s+parseFloat(c.amount||0),0);
+  }
+  document.getElementById("totalAmount")
+          .textContent = `合计金额：${total.toFixed(2)}`;
 
   const start = (currentPage - 1) * pageSize;
   const end = start + pageSize;
@@ -655,7 +695,7 @@ function renderTable() {
 }
 
 function renderPagination() {
-  const totalPages = Math.ceil(customers.length / pageSize);
+  const totalPages = Math.ceil(displayedCustomers.length / pageSize);
   const pagination = document.getElementById("pagination");
   pagination.innerHTML = "";
 
@@ -692,13 +732,59 @@ function renderPagination() {
   pagination.appendChild(nextBtn);
 }
 
+// 新增一个统一过滤函数 applyFilters：
+function applyFilters() {
+  const keyword = document.getElementById("searchName").value.trim();
+  const startDate = document.getElementById("startDate").value;
+  const endDate = document.getElementById("endDate").value;
+
+  displayedCustomers = customers.filter(c => {
+    const nameOK = !keyword || c.name.includes(keyword);
+    const time = c.delivery_time?.split('T')[0] || "";
+    const dateOK = (!startDate || time >= startDate) && (!endDate || time <= endDate);
+    return nameOK && dateOK;
+  });
+
+  currentPage = 1;
+  renderTable();
+  renderPagination();
+}
 function handlePageSizeChange(value) {
   pageSize = parseInt(value);
   currentPage = 1;
   renderTable();
   renderPagination();
 }
+// 把搜索、筛选、清除按钮都统一绑定到 applyFilters 或重置：
+document.getElementById("searchName")
+  .addEventListener("input", applyFilters);
 
+document.getElementById("filterBtn")
+  .addEventListener("click", applyFilters);
+
+document.getElementById("clearFilterBtn")
+  .addEventListener("click", () => {
+    document.getElementById("searchName").value = "";
+    document.getElementById("startDate").value = "";
+    document.getElementById("endDate").value = "";
+    displayedCustomers = customers.slice();
+    currentPage = 1;
+    renderTable();
+    renderPagination();
+  });
+// 通用防抖函数
+function debounce(fn, delay = 300) {
+  let timer;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+// 把 applyFilters 包装成防抖版
+const debouncedFilter = debounce(applyFilters, 300);
+document.getElementById("searchName")
+        .addEventListener("input", debouncedFilter);
+        
   function loadCustomerToForm(index) {
     const cust = customers[index];
     currentEditId = cust.id;
@@ -1135,7 +1221,52 @@ async function renderCustomerLogistics(customer) {
   td.innerHTML = `物流记录：${total} 件 <button onclick="showLogistics('${customer.id}')">查看</button>`;
   // 然后把 td 插入页面
 }
+async function loadPage(page = 1) {
+  showLoading();
+  const nameKw = document.getElementById("searchName").value.trim();
+  const startDate = document.getElementById("startDate").value;
+  const endDate = document.getElementById("endDate").value;
+  const from = (page - 1) * pageSize;
+  const to = page * pageSize - 1;
 
+  let query = supabaseClient
+    .from("customers")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (nameKw) query = query.ilike("name", `%${nameKw}%`);
+  if (startDate) query = query.gte("delivery_time", startDate);
+  if (endDate) query = query.lte("delivery_time", endDate);
+
+  const { data, count, error } = await query;
+  hideLoading();
+  if (error) return alert("加载失败：" + error.message);
+
+  displayedCustomers = data;
+  totalCount = count;      // 用于分页总页数：Math.ceil(totalCount/pageSize)
+  currentPage = page;
+  renderTable();
+  renderPagination();
+}
+function exportCSV() {
+  const rows = displayedCustomers.map(c =>
+    [c.name, c.phone, c.address, c.amount, c.customer_service, c.note, c.delivery_time]
+  );
+  const header = ["客户","电话","地址","金额","客服","备注","时间"];
+  const csv = [header, ...rows]
+    .map(r => r.map(v => `"${v}"`).join(","))
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  saveAs(blob, "客户数据导出.csv");
+}
+
+document.getElementById("exportBtn")
+        .addEventListener("click", exportCSV);
+
+flatpickr("#startDate", { dateFormat: "Y-m-d", allowInput: true });
+flatpickr("#endDate",   { dateFormat: "Y-m-d", allowInput: true });
+flatpickr("#delivery_time", { dateFormat: "Y-m-d" });
 
 </script>
 
