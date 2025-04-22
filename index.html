@@ -465,6 +465,7 @@ h1 {
         <input type="date" id="endDate" />
         <button id="filterBtn">筛选</button>
         <button id="clearFilterBtn">清除筛选</button>
+        <button id="exportBtn">导出当前视图</button>
         <!-- 金额汇总 + 一键删除 -->
         <div class="summary" id="totalAmount">
             <label>合计类型：</label>
@@ -473,11 +474,11 @@ h1 {
             <option value="page">当前页合计</option>
            </select>
         </div>
-        <button id="exportBtn">导出当前视图</button>
+       
         <button id="deleteAllBtn" class="btn-delete">删除所有信息</button>
 <a href="logistics.html" target="_blank" style="color:blue; text-decoration:underline;">进入物流登记页面 ➤</a>
     </div>
-     <div id="loadingOverlay" style="display:none; text-align:center; padding:20px;">⏳ 正在加载…</div>
+     
 
     <!-- 客户列表 -->
     <table>
@@ -496,6 +497,7 @@ h1 {
                 <th>物流</th>
             </tr>
         </thead>
+        <div id="loadingOverlay" style="display:none; text-align:center; padding:20px;">⏳ 正在加载…</div>
         <tbody id="customerTableBody"></tbody>
     </table>
     <!-- ✅ 添加分页控制区域 + 每页数量选择 -->
