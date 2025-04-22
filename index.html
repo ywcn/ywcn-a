@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="icon" href="./img/恐龙.png">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
        :root {
@@ -643,33 +644,25 @@ function renderTable() {
     tr.innerHTML = `<td colspan="11">暂无符合条件的记录</td>`;
     tbody.appendChild(tr);
     return;
-  }  
-  // 计算总金额：基于 displayedCustomers，而不是当前页
-  const totalAmount = displayedCustomers
-    .reduce((sum, c) => sum + parseFloat(c.amount || 0), 0)
-    .toFixed(2);
-  document.getElementById("totalAmount").textContent = `合计金额：${totalAmount}`;
-   const mode = document.getElementById("totalMode").value;
+  }
+  const mode = document.getElementById("totalMode").value;
   let total;
   if (mode === "page") {
     const start = (currentPage - 1) * pageSize;
     const pageData = displayedCustomers.slice(start, start + pageSize);
-    total = pageData.reduce((s,c)=>s+parseFloat(c.amount||0),0);
+    total = pageData.reduce((s, c) => s + parseFloat(c.amount || 0), 0);
   } else {
-    total = displayedCustomers.reduce((s,c)=>s+parseFloat(c.amount||0),0);
+    total = displayedCustomers.reduce((s, c) => s + parseFloat(c.amount || 0), 0);
   }
-  document.getElementById("totalAmount")
-          .textContent = `合计金额：${total.toFixed(2)}`;
+  document.getElementById("totalAmount").textContent = `合计金额：${total.toFixed(2)}`;
 
   const start = (currentPage - 1) * pageSize;
   const end = start + pageSize;
-  const pageData = customers.slice(start, end);
+  const pageData = displayedCustomers.slice(start, end);
 
   pageData.forEach((cust, index) => {
     const tr = document.createElement("tr");
     const shipmentCount = logisticsMap[cust.id] || 0;
-    totalAmount += parseFloat(cust.amount || 0);
-
     tr.innerHTML = `
       <td>${start + index + 1}</td>
       <td>${cust.name}</td>
@@ -681,7 +674,7 @@ function renderTable() {
       <td>${cust.delivery_time?.split("T")[0] || ""}</td>
       <td>
         <button class="btn-edit" onclick="loadCustomerToForm(${start + index})">编辑</button>
-        <button class="btn-delete" onclick="deleteCustomer(${start + index})">删除</button>
+        <button class="btn-delete" onclick="deleteCustomer(${start + index}, true)">删除</button>
       </td>
       <td class="order-count" data-customer-id="${cust.id}" onclick="openSupplierModal(${start + index})">
         已回货${cust.delivered_count || 0} / 未回货${cust.not_delivered_count || 0}
@@ -693,8 +686,6 @@ function renderTable() {
     `;
     tbody.appendChild(tr);
   });
-
-  document.getElementById("totalAmount").textContent = `合计金额：${totalAmount.toFixed(2)}`;
 }
 
 function renderPagination() {
@@ -847,16 +838,18 @@ document.getElementById("searchName")
   });
         
   //删除所有信息
-  async function deleteCustomer(index) {
-    const id = customers[index].id;
-    const { error } = await supabaseClient.from("customers").delete().eq("id", id);
-    if (!error) {
-      playDeleteSound();
-      loadData();
-    } else {
-      alert("删除失败：" + error.message);
-    }
+  async function deleteCustomer(index, isDisplayedIndex = false) {
+  const actualList = isDisplayedIndex ? displayedCustomers : customers;
+  const id = actualList[index].id;
+  const { error } = await supabaseClient.from("customers").delete().eq("id", id);
+  if (!error) {
+    playDeleteSound();
+    loadData();
+  } else {
+    alert("删除失败：" + error.message);
   }
+}
+
 
   document.getElementById("deleteAllBtn").addEventListener("click", async () => {
   if (confirm("确定删除所有客户？")) {
@@ -995,30 +988,11 @@ document.getElementById("pasteAddBtn").addEventListener("click", async () => {
     themeToggle.classList.toggle("active", saved === "dark");
     loadData();
   }; 
-//搜索功能
-document.getElementById("searchName").addEventListener("input", function () {
-  const keyword = this.value.trim();
-  const filtered = customers.filter(c => c.name.includes(keyword));
-  renderTable(filtered);
-});
-//筛选
-document.getElementById("filterBtn").addEventListener("click", () => {
-  const startDate = document.getElementById("startDate").value;
-  const endDate = document.getElementById("endDate").value;
 
-  const filtered = customers.filter(c => {
-    const time = c.delivery_time?.split('T')[0];
-    return (!startDate || time >= startDate) && (!endDate || time <= endDate);
-  });
 
-  renderTable(filtered);
-});
 
-document.getElementById("clearFilterBtn").addEventListener("click", () => {
-  document.getElementById("startDate").value = "";
-  document.getElementById("endDate").value = "";
-  renderTable(customers);
-});
+
+
 //修改密码
  function openChangePasswordModal() {
     document.getElementById("passwordModal").style.display = "flex";
@@ -1213,16 +1187,14 @@ document.querySelectorAll('.order-count-cell').forEach(cell => {
     };
 });
 async function renderCustomerLogistics(customer) {
-  const { data: logistics } = await supabase
+  const { data: logistics } = await supabaseClient
     .from("logistics")
     .select("shipment_count")
     .eq("customer_id", customer.id);
 
   const total = logistics.reduce((sum, item) => sum + item.shipment_count, 0);
-
   const td = document.createElement("td");
   td.innerHTML = `物流记录：${total} 件 <button onclick="showLogistics('${customer.id}')">查看</button>`;
-  // 然后把 td 插入页面
 }
 async function loadPage(page = 1) {
   showLoading();
