@@ -481,8 +481,8 @@ h1 {
        <div class="summary">
       <label>合计类型：</label>
       <select id="totalMode">
-      <option value="all">总计</option>
-     <option value="page">分页合计</option>
+      <option value="all">总计：</option>
+     <option value="page">分页合计：</option>
      </select>
     <div class="summary" id="totalAmount"></div>
      </div>   
@@ -665,7 +665,7 @@ function renderTable() {
   } else {
     total = displayedCustomers.reduce((s, c) => s + parseFloat(c.amount || 0), 0);
   }
-  document.getElementById("totalAmount").textContent = `合计金额：${total.toFixed(2)}`;
+  document.getElementById("totalAmount").textContent = `${total.toFixed(2)}`;
 
   const start = (currentPage - 1) * pageSize;
   const end = start + pageSize;
