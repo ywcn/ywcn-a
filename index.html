@@ -1348,6 +1348,118 @@ async function showLogistics(customerId, name) {
 function closeLogisticsModal() {
   document.getElementById("logisticsModal").style.display = "none";
 }
+
+// ======================= 以下是增强的交互体验与 bug 修复 =======================
+
+// 新增提示框函数
+function showToast(message, type = "info") {
+  const toast = document.createElement("div");
+  toast.textContent = message;
+  toast.style.position = "fixed";
+  toast.style.bottom = "80px";
+  toast.style.left = "50%";
+  toast.style.transform = "translateX(-50%)";
+  toast.style.background = type === "success" ? "#28a745" : "#333";
+  toast.style.color = "white";
+  toast.style.padding = "10px 20px";
+  toast.style.borderRadius = "10px";
+  toast.style.zIndex = 9999;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+// 保存按钮反馈
+const addBtn = document.getElementById("addCustomerBtn");
+addBtn.addEventListener("click", async () => {
+  const customer = {
+    name: document.getElementById("name").value.trim(),
+    phone: document.getElementById("phone").value.trim(),
+    address: document.getElementById("address").value.trim(),
+    amount: parseFloat(document.getElementById("amount").value.trim()) || 0,
+    customer_service: document.getElementById("customer_service").value.trim(),
+    note: document.getElementById("note").value.trim(),
+    delivery_time: document.getElementById("delivery_time").value
+  };
+
+  if (currentEditId) customer.id = currentEditId;
+
+  addBtn.disabled = true;
+  addBtn.textContent = currentEditId ? "正在更新..." : "正在添加...";
+
+  const { error } = await saveCustomer(customer);
+
+  addBtn.disabled = false;
+  addBtn.textContent = "添加";
+
+  if (!error) {
+    showToast(currentEditId ? "更新成功" : "添加成功", "success");
+    loadData();
+    clearForm();
+  } else {
+    alert("保存失败：" + error.message);
+  }
+});
+
+// 删除按钮修复为按 id
+async function deleteCustomerById(id) {
+  if (!confirm("确认删除该客户？")) return;
+  const { error } = await supabaseClient.from("customers").delete().eq("id", id);
+  if (!error) {
+    playDeleteSound();
+    showToast("客户删除成功", "success");
+    loadData();
+  } else {
+    alert("删除失败：" + error.message);
+  }
+}
+
+// 编辑按钮改为用 id 查找
+function loadCustomerToFormById(id) {
+  const cust = customers.find(c => c.id === id);
+  if (!cust) return alert("找不到客户数据");
+
+  currentEditId = cust.id;
+
+  document.getElementById("name").value = cust.name;
+  document.getElementById("phone").value = cust.phone;
+  document.getElementById("address").value = cust.address;
+  document.getElementById("amount").value = cust.amount;
+  document.getElementById("customer_service").value = cust.customer_service;
+  document.getElementById("note").value = cust.note;
+  document.getElementById("delivery_time").value = cust.delivery_time?.split('T')[0] || '';
+  document.getElementById("addCustomerBtn").textContent = "更新";
+  document.querySelector(".form-area").scrollIntoView({ behavior: 'smooth' });
+}
+
+// 物流更新件数同步
+async function showLogistics(customerId, name) {
+  const { data } = await supabaseClient
+    .from("logistics")
+    .select("*")
+    .eq("customer_id", customerId)
+    .order("shipment_date", { ascending: false });
+
+  logisticsMap[customerId] = data?.reduce((sum, item) => sum + (item.shipment_count || 0), 0) || 0;
+  renderTable(); // 刷新件数
+
+  const modal = document.getElementById("logisticsModal");
+  document.getElementById("logisticsModalName").textContent = name;
+  const list = document.getElementById("logisticsList");
+  list.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    list.innerHTML = "<p>暂无物流记录</p>";
+  } else {
+    data.forEach(item => {
+      const p = document.createElement("p");
+      p.textContent = `📦 ${item.shipment_count} 件 - ${item.shipment_date}`;
+      list.appendChild(p);
+    });
+  }
+
+  modal.style.display = "flex";
+}
+
 </script>
 </body>
 
