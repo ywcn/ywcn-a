@@ -742,7 +742,7 @@ function renderTable() {
       <td>${cust.delivery_time?.split("T")[0] || ""}</td>
       <td>
         <button class="btn-edit" onclick="loadCustomerToForm(${start + index})">编辑</button>
-        <button class="btn-delete" onclick="deleteCustomer(${start + index}, true)">删除</button>
+        <button class="btn-delete" onclick="openDeleteModal(customers[${start + index}], 'single')">删除</button>
       </td>
       <td class="order-count" data-customer-id="${cust.id}" onclick="openSupplierModal(${start + index})">
         已回货${cust.delivered_count || 0} / 未回货${cust.not_delivered_count || 0}
@@ -919,20 +919,8 @@ document.getElementById("searchName")
 }
 
 
-  document.getElementById("deleteAllBtn").addEventListener("click", async () => {
-  if (confirm("确定删除所有客户？")) {
-    const { error } = await supabaseClient
-      .from("customers")
-      .delete()
-      .not("id", "is", null); // ✅ 修改在这里
-
-    if (!error) {
-      playDeleteSound();
-      loadData();
-    } else {
-      alert("删除失败：" + error.message);
-    }
-  }
+  document.getElementById("deleteAllBtn").addEventListener("click", () => {
+  openDeleteModal(null, "all");
 });
 
 //粘贴识别模块
@@ -1461,6 +1449,19 @@ async function showLogistics(customerId, name) {
 }
 
 </script>
+
+<!-- 通用确认弹窗 -->
+<div id="deleteConfirmModal" class="modal" style="display: none;">
+  <div class="modal-content" style="width: 300px;">
+    <h3>⚠️ 确认操作</h3>
+    <p id="deleteConfirmText">是否确认？</p>
+    <div style="margin-top: 20px; display: flex; justify-content: space-around;">
+      <button id="confirmDeleteBtn" class="btn-delete">确认</button>
+      <button onclick="closeDeleteModal()">取消</button>
+    </div>
+  </div>
+</div>
+
 </body>
 
 
