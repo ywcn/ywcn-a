@@ -1542,7 +1542,7 @@ document.querySelectorAll(".mobile-footer button").forEach(btn => {
 
 
 <script>
-// openDeleteModal 
+// ✅ 修复 openDeleteModal 未定义：挂载到 window
 window.openDeleteModal = function(target, mode) {
   deleteTarget = target;
   deleteMode = mode;
@@ -1554,6 +1554,55 @@ window.closeDeleteModal = function () {
   deleteTarget = null;
   document.getElementById("deleteConfirmModal").style.display = "none";
 };
+</script>
+
+
+<script>
+let deleteTarget = null;
+let deleteMode = "single";
+
+window.openDeleteModal = function (target, mode) {
+  deleteTarget = target;
+  deleteMode = mode;
+  const text = mode === "all" ? "是否确认删除所有客户信息？" : `是否确认删除客户：${target.name}？`;
+  document.getElementById("deleteConfirmText").textContent = text;
+  document.getElementById("deleteConfirmModal").style.display = "flex";
+};
+
+window.closeDeleteModal = function () {
+  deleteTarget = null;
+  document.getElementById("deleteConfirmModal").style.display = "none";
+};
+
+window.confirmDelete = async function () {
+  if (deleteMode === "all") {
+    const ids = customers.map(c => c.id);
+    const { error } = await supabaseClient.from("customers").delete().in("id", ids);
+    if (!error) {
+      playDeleteSound();
+      showToast("已删除所有客户", "success");
+    } else {
+      alert("批量删除失败：" + error.message);
+    }
+  } else if (deleteTarget) {
+    const { error } = await supabaseClient.from("customers").delete().eq("id", deleteTarget.id);
+    if (!error) {
+      playDeleteSound();
+      showToast(`客户 ${deleteTarget.name} 已删除`, "success");
+    } else {
+      alert("删除失败：" + error.message);
+    }
+  }
+  window.closeDeleteModal();
+  loadData();
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("confirmDeleteBtn");
+  if (btn) {
+    btn.addEventListener("click", window.confirmDelete);
+  }
+});
 </script>
 
 </body>
