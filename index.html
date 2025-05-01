@@ -882,29 +882,7 @@ document.getElementById("searchName")
       return await supabaseClient.from("customers").insert([customer]);
     }
   }
-  //手动添加客户
-  document.getElementById("addCustomerBtn").addEventListener("click", async () => {
-    const customer = {
-      name: document.getElementById("name").value.trim(),
-      phone: document.getElementById("phone").value.trim(),
-      address: document.getElementById("address").value.trim(),
-      amount: parseFloat(document.getElementById("amount").value.trim()) || 0,
-      customer_service: document.getElementById("customer_service").value.trim(),
-      note: document.getElementById("note").value.trim(),
-      delivery_time: document.getElementById("delivery_time").value
-    };
-
-    if (currentEditId) customer.id = currentEditId;
-
-    const { error } = await saveCustomer(customer);
-    if (!error) {
-      loadData();
-      clearForm();
-    } else {
-      alert("保存失败：" + error.message);
-    }
-  });
-        
+ 
   //删除所有信息
   async function deleteCustomer(index, isDisplayedIndex = false) {
   const actualList = isDisplayedIndex ? displayedCustomers : customers;
