@@ -1540,6 +1540,22 @@ document.querySelectorAll(".mobile-footer button").forEach(btn => {
 });
 </script>
 
+
+<script>
+// openDeleteModal 
+window.openDeleteModal = function(target, mode) {
+  deleteTarget = target;
+  deleteMode = mode;
+  const text = mode === "all" ? "是否确认删除所有客户信息？" : `是否确认删除客户：${target.name}？`;
+  document.getElementById("deleteConfirmText").textContent = text;
+  document.getElementById("deleteConfirmModal").style.display = "flex";
+};
+window.closeDeleteModal = function () {
+  deleteTarget = null;
+  document.getElementById("deleteConfirmModal").style.display = "none";
+};
+</script>
+
 </body>
 
 
