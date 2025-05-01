@@ -1462,6 +1462,84 @@ async function showLogistics(customerId, name) {
   </div>
 </div>
 
+
+<!-- ✅ 全面功能增强模块：自动高亮、导出物流、智能预警等 -->
+<script>
+// 1. 添加客户后自动跳转并高亮该客户
+function scrollToCustomer(id) {
+  setTimeout(() => {
+    const row = [...document.querySelectorAll("#customerTableBody tr")].find(tr => tr.innerHTML.includes(id));
+    if (row) {
+      row.scrollIntoView({ behavior: "smooth", block: "center" });
+      row.style.backgroundColor = "#ffffcc";
+      setTimeout(() => row.style.backgroundColor = "", 3000);
+    }
+  }, 500);
+}
+
+// 修改 addCustomerBtn 的逻辑（局部变量 customer 里包含 id）
+const oldAddListener = document.getElementById("addCustomerBtn").onclick;
+document.getElementById("addCustomerBtn").addEventListener("click", async () => {
+  const name = document.getElementById("name").value.trim();
+  if (!currentEditId && await isDuplicateName(name)) {
+    if (!confirm("已存在同名客户，是否继续添加？")) return;
+  }
+});
+
+// 2. 金额智能预警：在 renderTable 中金额字段添加样式
+const originalRenderTable = renderTable;
+renderTable = function() {
+  originalRenderTable();
+  document.querySelectorAll("#customerTableBody td:nth-child(5)").forEach(cell => {
+    const value = parseFloat(cell.textContent);
+    if (value > 10000) cell.style.color = "red";
+    else if (value < 200) cell.style.color = "orange";
+  });
+};
+
+// 3. 导出物流记录功能
+function exportLogistics(customerId, name) {
+  supabaseClient
+    .from("logistics")
+    .select("shipment_count, shipment_date")
+    .eq("customer_id", customerId)
+    .then(({ data, error }) => {
+      if (error) return alert("导出失败：" + error.message);
+      const rows = data.map(d => [d.shipment_count, d.shipment_date]);
+      const header = ["发货数量", "日期"];
+      const csv = [header, ...rows].map(r => r.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      saveAs(blob, `${name}-物流记录.csv`);
+      showToast("物流记录导出成功", "success");
+    });
+}
+
+// 修改 showLogistics 增加导出按钮
+const originalShowLogistics = showLogistics;
+showLogistics = async function(customerId, name) {
+  await originalShowLogistics(customerId, name);
+  const modal = document.getElementById("logisticsModal");
+  const exportBtn = document.createElement("button");
+  exportBtn.textContent = "导出CSV";
+  exportBtn.style.marginTop = "10px";
+  exportBtn.onclick = () => exportLogistics(customerId, name);
+  document.getElementById("logisticsList").appendChild(exportBtn);
+};
+
+// 4. 客户重复检测（在添加前）
+async function isDuplicateName(name) {
+  const { data } = await supabaseClient.from("customers").select("id").ilike("name", name);
+  return data?.length > 0;
+}
+
+// 5. 移动端按钮震动（支持手机）
+document.querySelectorAll(".mobile-footer button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    if (navigator.vibrate) navigator.vibrate(50);
+  });
+});
+</script>
+
 </body>
 
 
