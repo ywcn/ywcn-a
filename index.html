@@ -881,14 +881,15 @@ document.getElementById("searchName")
     if (customer.id) {
         const { data, error } = await supabaseClient.from("customers").update(customer).eq("id", customer.id);
         if (error) {
-            console.error("更新失败:", error);
+            console.error("更新失败:", error);  // 打印错误信息
         }
         console.log('更新后的客户数据:', data);
         return { error };
     } else {
+        console.log('准备插入的数据:', customer);  // 确认插入的数据
         const { data, error } = await supabaseClient.from("customers").insert([customer]);
         if (error) {
-            console.error("插入失败:", error);  // 打印错误信息
+            console.error("插入失败:", error);  // 打印详细错误信息
         }
         console.log('插入的新客户数据:', data);  // 打印插入的数据
         return { error };
