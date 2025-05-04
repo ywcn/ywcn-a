@@ -876,7 +876,9 @@ document.getElementById("searchName")
 
   async function saveCustomer(customer) {
     customer.user_id = user.id;
-    console.log('提交的客户数据:', customer);  // 打印提交的数据
+      console.log('当前用户 ID:', user.id);  // 打印用户 ID，确保它存在
+
+    console.log('准备插入的数据:', customer);  // 打印提交的数据
 
     if (customer.id) {
         const { data, error } = await supabaseClient.from("customers").update(customer).eq("id", customer.id);
@@ -886,22 +888,25 @@ document.getElementById("searchName")
         console.log('更新后的客户数据:', data);
         return { error };
     } else {
-        console.log('准备插入的数据:', customer);  // 确认插入的数据
         const { data, error } = await supabaseClient.from("customers").insert([customer]);
         if (error) {
-            console.error("插入失败:", error);  // 打印详细错误信息
+            console.error("插入失败:", error);  // 打印插入失败的错误信息
         }
         console.log('插入的新客户数据:', data);  // 打印插入的数据
         return { error };
     }
 }
 
-  //手动添加客户
-  document.getElementById("addCustomerBtn").addEventListener("click", async () => {
+
+
+  // 保存按钮反馈
+const addBtn = document.getElementById("addCustomerBtn");
+addBtn.addEventListener("click", async () => {
     const addButton = document.getElementById("addCustomerBtn");
 
     // 禁用按钮，防止多次点击
     addButton.disabled = true;
+    addButton.textContent = currentEditId ? "正在更新..." : "正在添加...";
 
     const customerName = document.getElementById("name").value.trim();
     
@@ -910,6 +915,7 @@ document.getElementById("searchName")
     if (isDuplicate) {
         alert("该客户已存在，请检查！");
         addButton.disabled = false;  // 启用按钮
+        addButton.textContent = "添加";
         return;  // 终止添加操作
     }
 
@@ -927,15 +933,20 @@ document.getElementById("searchName")
 
     const { error } = await saveCustomer(customer);
 
+    // 操作完成后恢复按钮状态
+    addButton.disabled = false;
+    addButton.textContent = currentEditId ? "正在更新..." : "添加...";
+
     if (!error) {
+        showToast(currentEditId ? "更新成功" : "添加成功", "success");
         loadData();
         clearForm();
     } else {
         alert("保存失败：" + error.message);
     }
-
-    addButton.disabled = false;  // 启用按钮
 });
+
+
 
         
   //删除所有信息
@@ -1389,38 +1400,6 @@ function showToast(message, type = "info") {
   setTimeout(() => toast.remove(), 2500);
 }
 
-// 保存按钮反馈
-const addBtn = document.getElementById("addCustomerBtn");
-addBtn.addEventListener("click", async () => {
-  const customer = {
-    name: document.getElementById("name").value.trim(),
-    phone: document.getElementById("phone").value.trim(),
-    address: document.getElementById("address").value.trim(),
-    amount: parseFloat(document.getElementById("amount").value.trim()) || 0,
-    customer_service: document.getElementById("customer_service").value.trim(),
-    note: document.getElementById("note").value.trim(),
-    delivery_time: document.getElementById("delivery_time").value
-  };
-
-  if (currentEditId) customer.id = currentEditId;
-
-  addBtn.disabled = true;
-  addBtn.textContent = currentEditId ? "正在更新..." : "正在添加...";
-
-  const { error } = await saveCustomer(customer);
-
-  addBtn.disabled = false;
-  addBtn.textContent = "添加";
-
-  if (!error) {
-    showToast(currentEditId ? "更新成功" : "添加成功", "success");
-    loadData();
-    clearForm();
-  } else {
-    alert("保存失败：" + error.message);
-  }
-});
-
 // 删除按钮修复为按 id
 async function deleteCustomerById(id) {
   if (!confirm("确认删除该客户？")) return;
@@ -1561,9 +1540,14 @@ showLogistics = async function(customerId, name) {
 
 // 4. 客户重复检测（在添加前）
 async function isDuplicateName(name) {
-  const { data } = await supabaseClient.from("customers").select("id").ilike("name", name);
-  return data?.length > 0;
+    const { data, error } = await supabaseClient.from("customers").select("id").ilike("name", name);
+    if (error) {
+        console.error("检查重复时出错:", error);
+        return false;  // 如果发生错误，默认返回 false，避免阻止添加
+    }
+    return data.length > 0;  // 如果有数据，说明客户已存在
 }
+
 
 // 5. 移动端按钮震动（支持手机）
 document.querySelectorAll(".mobile-footer button").forEach(btn => {
