@@ -876,15 +876,21 @@ document.getElementById("searchName")
 
   async function saveCustomer(customer) {
     customer.user_id = user.id;
-    console.log('提交的客户数据:', customer);  // 打印日志
+    console.log('提交的客户数据:', customer);  // 打印提交的数据
 
     if (customer.id) {
         const { data, error } = await supabaseClient.from("customers").update(customer).eq("id", customer.id);
-        console.log('更新后的客户数据:', data);  // 打印更新后的客户数据
+        if (error) {
+            console.error("更新失败:", error);
+        }
+        console.log('更新后的客户数据:', data);
         return { error };
     } else {
         const { data, error } = await supabaseClient.from("customers").insert([customer]);
-        console.log('插入的新客户数据:', data);  // 打印插入后的客户数据
+        if (error) {
+            console.error("插入失败:", error);  // 打印错误信息
+        }
+        console.log('插入的新客户数据:', data);  // 打印插入的数据
         return { error };
     }
 }
@@ -892,7 +898,9 @@ document.getElementById("searchName")
   //手动添加客户
   document.getElementById("addCustomerBtn").addEventListener("click", async () => {
     const addButton = document.getElementById("addCustomerBtn");
-    addButton.disabled = true;  // 禁用按钮，防止多次点击
+
+    // 禁用按钮，防止多次点击
+    addButton.disabled = true;
 
     const customerName = document.getElementById("name").value.trim();
     
@@ -921,11 +929,11 @@ document.getElementById("searchName")
     if (!error) {
         loadData();
         clearForm();
-        addButton.disabled = false;  // 启用按钮
     } else {
         alert("保存失败：" + error.message);
-        addButton.disabled = false;  // 启用按钮
     }
+
+    addButton.disabled = false;  // 启用按钮
 });
 
         
