@@ -1538,15 +1538,7 @@ showLogistics = async function(customerId, name) {
   document.getElementById("logisticsList").appendChild(exportBtn);
 };
 
-// 4. 客户重复检测（在添加前）
-async function isDuplicateName(name) {
-    const { data, error } = await supabaseClient.from("customers").select("id").ilike("name", name);
-    if (error) {
-        console.error("检查重复时出错:", error);
-        return false;  // 如果发生错误，默认返回 false，避免阻止添加
-    }
-    return data.length > 0;  // 如果有数据，说明客户已存在
-}
+
 
 
 // 5. 移动端按钮震动（支持手机）
