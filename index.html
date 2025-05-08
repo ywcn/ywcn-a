@@ -946,6 +946,14 @@ addBtn.addEventListener("click", async () => {
     }
 });
 
+async function isDuplicateName(name) {
+  if (!name) return false;
+  const { data, error } = await supabaseClient
+    .from("customers")
+    .select("id")
+    .eq("name", name);
+  return data && data.length > 0;
+}
 
 
         
