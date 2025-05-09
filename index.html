@@ -658,7 +658,7 @@ if (!user || !user.access_token || !user.refresh_token) {
   });
 }
 
-
+  
 
   let currentEditId = null;
   let currentCustomerIndex = null;
@@ -667,6 +667,8 @@ if (!user || !user.access_token || !user.refresh_token) {
   let currentPage = 1;
   let pageSize = 10;
   let logisticsMap = {};
+  let supplierStatusMap = {};   // 存储客户供应商回货状态
+  let shipmentStatusMap = {};   // 存储客户是否已有发货记录
 
 function showLoading() {
   document.getElementById("loadingOverlay").style.display = "block";
@@ -676,6 +678,7 @@ function hideLoading() {
 }
   async function loadData() {
   showLoading();
+
   const { data: allCustomers, error: customerError } = await supabaseClient
     .from("customers")
     .select("*")
@@ -685,22 +688,44 @@ function hideLoading() {
     .from("logistics")
     .select("customer_id, shipment_count");
 
-  if (customerError || logisticsError) {
-    alert("加载失败" + (customerError?.message || logisticsError?.message));
+  const { data: allSuppliers, error: supplierError } = await supabaseClient
+    .from("suppliers")
+    .select("id, customer_id, is_delivered");
+
+  if (customerError || logisticsError || supplierError) {
+    alert("加载失败" + (customerError?.message || logisticsError?.message || supplierError?.message));
     return;
   }
 
+  // 统计物流
   logisticsMap = {};
+  shipmentStatusMap = {};
   for (const l of logisticsData) {
     logisticsMap[l.customer_id] = (logisticsMap[l.customer_id] || 0) + l.shipment_count;
+    if (l.shipment_count > 0) shipmentStatusMap[l.customer_id] = true;
   }
+
+  // 统计供应商
+  supplierStatusMap = {};
+  const supplierGroups = allSuppliers.reduce((map, s) => {
+    if (!map[s.customer_id]) map[s.customer_id] = [];
+    map[s.customer_id].push(s);
+    return map;
+  }, {});
+
+  for (const cid in supplierGroups) {
+    const allDelivered = supplierGroups[cid].every(s => s.is_delivered === true);
+    supplierStatusMap[cid] = allDelivered;
+  }
+
   customers = allCustomers;
-  displayedCustomers = customers.slice();  // 初始时未过滤
+  displayedCustomers = customers.slice();
   currentPage = 1;
   renderTable();
   renderPagination();
   hideLoading();
 }
+
 document.getElementById("totalMode")
         .addEventListener("change", renderTable);
 //渲染页面
@@ -709,6 +734,12 @@ function renderTable() {
   tbody.innerHTML = "";
   if (displayedCustomers.length === 0) {
     const tr = document.createElement("tr");
+    if (supplierStatusMap[cust.id] && !shipmentStatusMap[cust.id]) {
+  tr.style.backgroundColor = "#d4edda"; // 全部回货且尚未发货，绿色背景
+} else {
+  tr.style.backgroundColor = ""; // 否则恢复原背景
+}
+
     tr.innerHTML = `<td colspan="11">暂无符合条件的记录</td>`;
     tbody.appendChild(tr);
     return;
