@@ -734,12 +734,6 @@ function renderTable() {
   tbody.innerHTML = "";
   if (displayedCustomers.length === 0) {
     const tr = document.createElement("tr");
-    if (supplierStatusMap[cust.id] && !shipmentStatusMap[cust.id]) {
-  tr.style.backgroundColor = "#d4edda"; // 全部回货且尚未发货，绿色背景
-} else {
-  tr.style.backgroundColor = ""; // 否则恢复原背景
-}
-
     tr.innerHTML = `<td colspan="11">暂无符合条件的记录</td>`;
     tbody.appendChild(tr);
     return;
@@ -761,6 +755,11 @@ function renderTable() {
 
   pageData.forEach((cust, index) => {
     const tr = document.createElement("tr");
+    if (supplierStatusMap[cust.id] && !shipmentStatusMap[cust.id]) {
+  tr.style.backgroundColor = "#d4edda"; // 全部回货且尚未发货，绿色背景
+} else {
+  tr.style.backgroundColor = ""; // 否则恢复原背景
+}
     const shipmentCount = logisticsMap[cust.id] || 0;
     tr.innerHTML = `
       <td>${start + index + 1}</td>
