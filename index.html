@@ -965,9 +965,11 @@ async function isDuplicateName(name) {
   const { data, error } = await supabaseClient
     .from("customers")
     .select("id")
-    .eq("name", name);
+    .eq("name", name)
+    .eq("user_id", user.id); // ✅ 限定当前用户
   return data && data.length > 0;
 }
+
 
 
         
