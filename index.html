@@ -900,51 +900,65 @@ document.getElementById("searchName")
 
 
   // 保存按钮反馈
-const addBtn = document.getElementById("addCustomerBtn");
-addBtn.addEventListener("click", async () => {
-    const addButton = document.getElementById("addCustomerBtn");
+document.getElementById("addCustomerBtn").onclick = async () => {
+  const addButton = document.getElementById("addCustomerBtn");
+  addButton.disabled = true;
+  addButton.textContent = currentEditId ? "正在更新..." : "正在添加...";
 
-    // 禁用按钮，防止多次点击
-    addButton.disabled = true;
-    addButton.textContent = currentEditId ? "正在更新..." : "正在添加...";
-
-    const customerName = document.getElementById("name").value.trim();
-    
-    // 检查客户是否已存在
-    const isDuplicate = await isDuplicateName(customerName);
-    if (isDuplicate) {
-        alert("该客户已存在，请检查！");
-        addButton.disabled = false;  // 启用按钮
-        addButton.textContent = "添加";
-        return;  // 终止添加操作
-    }
-
-    const customer = {
-        name: customerName,
-        phone: document.getElementById("phone").value.trim(),
-        address: document.getElementById("address").value.trim(),
-        amount: parseFloat(document.getElementById("amount").value.trim()) || 0,
-        customer_service: document.getElementById("customer_service").value.trim(),
-        note: document.getElementById("note").value.trim(),
-        delivery_time: document.getElementById("delivery_time").value
-    };
-
-    if (currentEditId) customer.id = currentEditId;
-
-    const { error } = await saveCustomer(customer);
-
-    // 操作完成后恢复按钮状态
+  const customerName = document.getElementById("name").value.trim();
+  if (!customerName) {
+    alert("客户名不能为空！");
     addButton.disabled = false;
-    addButton.textContent = currentEditId ? "正在更新..." : "添加...";
+    addButton.textContent = currentEditId ? "更新" : "添加";
+    return;
+  }
 
-    if (!error) {
-        showToast(currentEditId ? "更新成功" : "添加成功", "success");
-        loadData();
-        clearForm();
-    } else {
-        alert("保存失败：" + error.message);
+  if (!currentEditId && await isDuplicateName(customerName)) {
+    const goOn = confirm("已存在同名客户，是否继续添加？");
+    if (!goOn) {
+      addButton.disabled = false;
+      addButton.textContent = "添加";
+      return;
     }
-});
+  }
+
+  const customer = {
+    name: customerName,
+    phone: document.getElementById("phone").value.trim(),
+    address: document.getElementById("address").value.trim(),
+    amount: parseFloat(document.getElementById("amount").value.trim()) || 0,
+    customer_service: document.getElementById("customer_service").value.trim(),
+    note: document.getElementById("note").value.trim(),
+    delivery_time: document.getElementById("delivery_time").value
+  };
+
+  if (currentEditId) customer.id = currentEditId;
+
+  const { error } = await saveCustomer(customer);
+
+  addButton.disabled = false;
+  addButton.textContent = currentEditId ? "更新" : "添加";
+
+  if (!error) {
+    showToast(currentEditId ? "更新成功" : "添加成功", "success");
+    await loadData();
+    clearForm();
+
+    // ⬇️ 自动滚动并高亮该客户
+    setTimeout(() => {
+      const row = [...document.querySelectorAll("#customerTableBody tr")]
+        .find(tr => tr.innerHTML.includes(customer.name));
+      if (row) {
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+        row.style.backgroundColor = "#ffffcc";
+        setTimeout(() => row.style.backgroundColor = "", 3000);
+      }
+    }, 300);
+  } else {
+    alert("保存失败：" + error.message);
+  }
+};
+
 
 async function isDuplicateName(name) {
   if (!name) return false;
