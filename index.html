@@ -638,7 +638,7 @@ h1 {
 
 async function initPage() {
   const user = JSON.parse(localStorage.getItem("loggedInUser"));
-  const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+  const { data: { user: supabaseUser } } = await supabaseClient.auth.getUser(); // ✅ 修正这里
   console.log('当前邮箱:', supabaseUser?.email);
 
   if (!user || !user.access_token || !user.refresh_token) {
@@ -661,8 +661,8 @@ async function initPage() {
   }
 }
 
-// 启动初始化函数
-initPage();
+initPage(); // 启动
+
 
 
   
