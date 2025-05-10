@@ -636,32 +636,34 @@ h1 {
 
  document.body.style.display = "none"; // 防止页面瞬闪
 
-const user = JSON.parse(localStorage.getItem("loggedInUser"));
-const { data: { user: supabaseUser } } = await supabase.auth.getUser(); 
+async function initPage() {
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+  console.log('当前邮箱:', supabaseUser?.email);
 
-console.log('当前邮箱:', user?.email)
-
-
-if (!user || !user.access_token || !user.refresh_token) {
-  alert("未登录或登录信息不完整，跳转 login.html");
-  window.location.href = "login.html";
-} else {
-  supabaseClient.auth.setSession({
-    access_token: user.access_token,
-    refresh_token: user.refresh_token
-  }).then(({ error }) => {
-    if (error) {
-      console.error("❌ Supabase setSession 失败：", error.message);
-      alert("token 设置失败：" + error.message);
-      window.location.href = "login.html";
-    } else {
-      
-      document.getElementById("userAvatar").src = user.avatar;
-      document.getElementById("userName").textContent = `欢迎您！${user.name}`;
-      document.body.style.display = "block";
-    }
-  });
+  if (!user || !user.access_token || !user.refresh_token) {
+    alert("未登录或登录信息不完整，跳转 login.html");
+    window.location.href = "login.html";
+  } else {
+    await supabaseClient.auth.setSession({
+      access_token: user.access_token,
+      refresh_token: user.refresh_token
+    }).then(({ error }) => {
+      if (error) {
+        alert("token 设置失败：" + error.message);
+        window.location.href = "login.html";
+      } else {
+        document.getElementById("userAvatar").src = user.avatar;
+        document.getElementById("userName").textContent = `欢迎您！${user.name}`;
+        document.body.style.display = "block";
+      }
+    });
+  }
 }
+
+// 启动初始化函数
+initPage();
+
 
   
 
