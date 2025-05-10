@@ -637,7 +637,8 @@ h1 {
  document.body.style.display = "none"; // 防止页面瞬闪
 
 const user = JSON.parse(localStorage.getItem("loggedInUser"));
-const { data: { user } } = await supabase.auth.getUser()
+const { data: { user: supabaseUser } } = await supabase.auth.getUser(); 
+
 console.log('当前邮箱:', user?.email)
 
 
@@ -1556,16 +1557,7 @@ document.getElementById("addCustomerBtn").addEventListener("click", async () => 
   }
 });
 
-// 2. 金额智能预警：在 renderTable 中金额字段添加样式
-const originalRenderTable = renderTable;
-renderTable = function() {
-  originalRenderTable();
-  document.querySelectorAll("#customerTableBody td:nth-child(5)").forEach(cell => {
-    const value = parseFloat(cell.textContent);
-    if (value > 10000) cell.style.color = "red";
-    else if (value < 200) cell.style.color = "orange";
-  });
-};
+
 
 // 3. 导出物流记录功能
 function exportLogistics(customerId, name) {
