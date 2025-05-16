@@ -912,26 +912,25 @@ document.getElementById("searchName")
   }
 
   async function saveCustomer(customer) {
-    customer.user_id = user.id;
-      console.log('当前用户 ID:', user.id);  // 打印用户 ID，确保它存在
+  const localUser = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!localUser?.id) {
+    alert("用户信息异常，请重新登录");
+    window.location.href = "login.html";
+    return { error: { message: "用户信息缺失" } };
+  }
 
-    console.log('准备插入的数据:', customer);  // 打印提交的数据
+  customer.user_id = localUser.id;
+  console.log('当前用户 ID:', localUser.id);
 
-    if (customer.id) {
-        const { data, error } = await supabaseClient.from("customers").update(customer).eq("id", customer.id);
-        if (error) {
-            console.error("更新失败:", error);  // 打印错误信息
-        }
-        console.log('更新后的客户数据:', data);
-        return { error };
-    } else {
-        const { data, error } = await supabaseClient.from("customers").insert([customer]);
-        if (error) {
-            console.error("插入失败:", error);  // 打印插入失败的错误信息
-        }
-        console.log('插入的新客户数据:', data);  // 打印插入的数据
-        return { error };
-    }
+  if (customer.id) {
+    const { data, error } = await supabaseClient.from("customers").update(customer).eq("id", customer.id);
+    if (error) console.error("更新失败:", error);
+    return { error };
+  } else {
+    const { data, error } = await supabaseClient.from("customers").insert([customer]);
+    if (error) console.error("插入失败:", error);
+    return { error };
+  }
 }
 
 
@@ -999,11 +998,18 @@ document.getElementById("addCustomerBtn").onclick = async () => {
 
 async function isDuplicateName(name) {
   if (!name) return false;
+  const localUser = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!localUser?.id) {
+    alert("用户信息异常，请重新登录");
+    window.location.href = "login.html";
+    return false;
+  }
+
   const { data, error } = await supabaseClient
     .from("customers")
     .select("id")
     .eq("name", name)
-    .eq("user_id", user.id); // ✅ 限定当前用户
+    .eq("user_id", localUser.id);
   return data && data.length > 0;
 }
 
@@ -1191,20 +1197,28 @@ function closePasswordModal() {
 
   // 🎵 换头像 + 音效
   function changeAvatar() {
-    const newUrl = `https://i.pravatar.cc/150?u=${Date.now() + Math.random()}`;
-    user.avatar = newUrl;
-    localStorage.setItem("loggedInUser", JSON.stringify(user));
-    document.getElementById("userAvatar").src = newUrl;
-
-    const avatarSound = document.getElementById("avatarSound");
-    avatarSound.currentTime = 0;
-    avatarSound.play();
-    if (avatarSound._stopTimer) clearTimeout(avatarSound._stopTimer);
-    avatarSound._stopTimer = setTimeout(() => {
-      avatarSound.pause();
-      avatarSound.currentTime = 0;
-    }, 1000);
+  const localUser = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!localUser) {
+    alert("用户信息异常，请重新登录");
+    window.location.href = "login.html";
+    return;
   }
+
+  const newUrl = `https://i.pravatar.cc/150?u=${Date.now() + Math.random()}`;
+  localUser.avatar = newUrl;
+  localStorage.setItem("loggedInUser", JSON.stringify(localUser));
+  document.getElementById("userAvatar").src = newUrl;
+
+  const avatarSound = document.getElementById("avatarSound");
+  avatarSound.currentTime = 0;
+  avatarSound.play();
+  if (avatarSound._stopTimer) clearTimeout(avatarSound._stopTimer);
+  avatarSound._stopTimer = setTimeout(() => {
+    avatarSound.pause();
+    avatarSound.currentTime = 0;
+  }, 1000);
+}
+
 
   const deleteSound = document.getElementById("deleteSound");
   function playDeleteSound() {
